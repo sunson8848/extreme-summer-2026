@@ -125,16 +125,22 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   background:var(--card2);backdrop-filter:blur(20px);border-right:1px solid var(--line);
   display:flex;flex-direction:column;transition:transform .4s cubic-bezier(.4,0,.2,1)}
 #dashboard.collapsed{transform:translateX(-103%)}
-#dash-head{padding:16px 18px 12px;border-bottom:1px solid var(--line2);display:flex;
-  justify-content:space-between;align-items:flex-start;gap:10px;
+#dash-head{padding:14px 16px 12px;border-bottom:1px solid var(--line2);
   background:linear-gradient(175deg,rgba(79,195,247,.07),transparent 70%)}
-#dash-head .brand{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:5px;color:rgba(79,195,247,.45)}
+#dash-head .brand{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:4px;
+  color:rgba(79,195,247,.45);display:block;margin-bottom:8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#dash-head .dh-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
 #dash-head h1{font-size:23px;font-weight:200;letter-spacing:3px;color:var(--ink);margin:3px 0 2px;line-height:1.2}
 #dash-head h1 b{font-weight:900;color:var(--hot)}
 #dash-head .sub{font-size:9px;color:var(--mut);letter-spacing:2px}
-#dash-collapse{background:none;border:1px solid var(--line);color:var(--mut);width:26px;height:26px;
-  border-radius:6px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;transition:all .2s;margin-top:2px}
-#dash-collapse:hover{color:var(--teal);border-color:var(--teal)}
+#dash-collapse{display:flex;align-items:center;gap:5px;flex-shrink:0;white-space:nowrap;
+  background:rgba(79,195,247,.16);border:1px solid rgba(79,195,247,.45);color:var(--teal);
+  padding:9px 13px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;
+  letter-spacing:1px;font-family:'Noto Sans SC';transition:all .2s;margin-top:2px}
+#dash-collapse:hover{background:rgba(79,195,247,.28);box-shadow:0 0 16px rgba(79,195,247,.3)}
+#dash-collapse .ar{font-size:17px;line-height:1;animation:arrowNudge 1.6s ease infinite}
+@keyframes arrowNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
 #dash-tabs{display:flex;border-bottom:1px solid var(--line2)}
 .dash-tab{flex:1;padding:11px 2px;background:none;border:none;border-bottom:2px solid transparent;
   color:var(--mut);font-size:11px;cursor:pointer;letter-spacing:1px;font-family:'Noto Sans SC';transition:all .2s;white-space:nowrap}
@@ -309,6 +315,7 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   #event-panel{width:100vw}
   #dashboard{width:100vw;bottom:70px}
   #dash-reopen{top:auto;bottom:78px;left:12px}
+  #dash-collapse{padding:8px 11px;font-size:12px}
 }
 </style>
 
@@ -367,12 +374,14 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   <!-- ====== DASHBOARD ====== -->
   <div id="dashboard">
     <div id="dash-head">
-      <div>
-        <div class="brand">EXTREME SUMMER · CHINA 2026</div>
-        <h1>极端的<b>一夏</b></h1>
-        <div class="sub">2026中国极端天气灾害链调查</div>
+      <div class="brand">EXTREME SUMMER · CHINA 2026</div>
+      <div class="dh-row">
+        <div>
+          <h1>极端的<b>一夏</b></h1>
+          <div class="sub">2026中国极端天气灾害链调查</div>
+        </div>
+        <button id="dash-collapse" onclick="toggleDashboard()" title="收起仪表盘，查看地图">点击进入地图<span class="ar">›</span></button>
       </div>
-      <button id="dash-collapse" onclick="toggleDashboard()" title="收起仪表盘">‹</button>
     </div>
     <div id="dash-tabs">
       <button class="dash-tab active" data-tab="what" onclick="setMode('what')">发生了什么</button>
