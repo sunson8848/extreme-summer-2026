@@ -96,14 +96,14 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
 #app.show{display:flex}
 
 /* Map container - deep blue ocean */
-#map{flex:1;z-index:1;filter:saturate(.85) brightness(.9) hue-rotate(-10deg)}
-#map .leaflet-tile-pane{filter:brightness(.35) sepia(1) hue-rotate(185deg) saturate(2.5)}
-#map .leaflet-container{background:var(--deep)}
+#map{flex:1;z-index:1}
+#map .leaflet-tile-pane{filter:saturate(1.18) brightness(1.02) hue-rotate(-5deg)}
+#map .leaflet-container{background:var(--deep2)}
 
 /* Map gradient overlay - deep blue ocean effect */
 #map-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:linear-gradient(180deg,rgba(6,13,31,.5) 0%,rgba(6,13,31,0) 30%,rgba(6,13,31,0) 70%,rgba(6,13,31,.6) 100),
-  radial-gradient(ellipse at center,transparent 50%,rgba(6,13,31,.3) 100%)}
+  background:linear-gradient(180deg,rgba(6,13,31,.25) 0%,rgba(6,13,31,0) 26%,rgba(6,13,31,0) 72%,rgba(6,13,31,.32) 100%),
+  radial-gradient(ellipse at center,transparent 58%,rgba(6,13,31,.1) 100%)}
 
 /* header folded into dashboard */
 
@@ -492,7 +492,8 @@ function skipCinema(){
 // ====== INIT MAP ======
 function initMap(){
   map=L.map('map',{zoomControl:false,attributionControl:false}).setView([30,105],5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'©OSM',maxZoom:18}).addTo(map);
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+    {attribution:'© 高德地图',subdomains:['1','2','3','4'],maxZoom:18}).addTo(map);
   map.createPane('gibs');
   map.getPane('gibs').style.zIndex=350;
   L.control.zoom({position:'bottomright'}).addTo(map);
@@ -519,8 +520,8 @@ function markerIcon(c,size,isCore){
   return L.divIcon({
     className:'marker-custom',
     html:`<div style="width:${size*2}px;height:${size*2}px;border-radius:50%;
-      background:radial-gradient(circle,${c}40 0%,${c}15 60%,transparent 100%);
-      border:1.5px solid ${c};box-shadow:0 0 ${size}px ${c}30;
+      background:radial-gradient(circle,${c} 0%,${c}cc 35%,${c}30 70%,transparent 100%);
+      border:1.5px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(8,20,45,.5),0 0 ${size}px ${c}66;
       ${isCore?'animation:pulse 2.5s ease infinite;':''}"></div>`,
     iconSize:[size*2,size*2],iconAnchor:[size,size]
   });
