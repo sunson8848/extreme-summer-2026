@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>极端的一夏 — 2026中国极端天气灾害链调查</title>
+<meta name="description" content="2026年夏天，中国经历了怎样的极端天气？20个标志性灾害事件、灾害链、气候归因与损失分析，一张交互地图打开中国这个夏天。">
+<meta property="og:title" content="极端的一夏 — 2026中国极端天气灾害链调查">
+<meta property="og:description" content="20个标志性极端天气事件 · 灾害链 · 气候归因 · 损失图谱 — 一张交互地图打开中国这个夏天">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg">
+<meta name="theme-color" content="#060d1f">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link href="https://fonts.loli.net/css2?family=Noto+Sans+SC:wght@200;300;400;500;700;900&family=IBM+Plex+Mono:wght@300;400&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --deep:#060d1f;--deep2:#0a1628;--navy:#0f2027;--ocean:#123a5c;
+  --card:rgba(10,22,40,.88);--card2:rgba(15,32,50,.92);
+  --ink:#dce4f0;--ink2:#7a95b5;--mut:#3d5a80;
+  --hot:#ff6b35;--warn:#ffb020;--rain:#4fc3f7;--ice:#81d4fa;--teal:#4fc3f7;
+  --gold:#ffd54f;--line:rgba(79,195,247,.12);--line2:rgba(79,195,247,.06);
+  --glow:0 0 20px rgba(79,195,247,.15);
+}
+html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
+  font-family:'Noto Sans SC',sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* ==================== CINEMATIC OPENING ==================== */
+#cinema{position:fixed;inset:0;z-index:10000;background:var(--deep);
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  transition:opacity 1.2s ease}
+#cinema.done{opacity:0;pointer-events:none}
+
+/* Phase 1: Question */
+#c-question{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;
+  z-index:10;pointer-events:none;padding:0 10%;
+  font-family:'Zhi Mang Xing','Ma Shan Zheng',cursive;
+  font-size:clamp(28px,6vw,72px);letter-spacing:4px;line-height:1.4;
+  color:rgba(220,228,240,0);text-align:center;
+  text-shadow:0 0 30px rgba(79,195,247,.3),0 2px 10px rgba(0,0,0,.5);
+  animation:qFade 2.5s 3s ease forwards}
+@keyframes qFade{to{color:rgba(220,228,240,.9)}}
+
+/* Phase 2: Real Earth Globe */
+#c-globe{position:absolute;width:0;height:0;border-radius:50%;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  opacity:0;overflow:hidden;
+  transition:width 2.5s cubic-bezier(.25,0,.2,1),height 2.5s cubic-bezier(.25,0,.2,1),opacity 1.2s;
+  box-shadow:0 0 80px rgba(79,195,247,.15),0 0 120px rgba(79,195,247,.06),
+    inset -30px -10px 80px rgba(0,0,0,.7),inset 10px 5px 40px rgba(79,195,247,.08)}
+#c-globe.visible{width:min(72vmin,520px);height:min(72vmin,520px);opacity:1}
+#c-globe .earth-img{position:absolute;width:200%;height:100%;object-fit:cover;
+  animation:earthSpin 25s linear infinite;filter:saturate(1.1) brightness(1.05)}
+@keyframes earthSpin{0%{transform:translateX(0)}50%{transform:translateX(-50%)}100%{transform:translateX(0)}}
+#c-globe .earth-shade{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 35% 32%,transparent 30%,rgba(0,0,20,.15) 55%,rgba(0,0,15,.55) 85%,rgba(0,0,10,.8) 100%)}
+#c-globe .earth-atmo{position:absolute;inset:-3%;border-radius:50%;
+  background:radial-gradient(circle,transparent 62%,rgba(79,195,247,.12) 72%,rgba(79,195,247,.04) 82%,transparent 92%)}
+.globe-layer{position:absolute;inset:0;opacity:0;transition:opacity 1.2s;mix-blend-mode:screen}
+.globe-layer.show{opacity:1}
+.gl-temp{background:radial-gradient(circle at 40% 35%,rgba(255,107,53,.15) 0%,rgba(255,107,53,.03) 40%,transparent 60%)}
+.gl-sst{background:radial-gradient(circle at 60% 55%,rgba(255,152,0,.1) 0%,rgba(255,152,0,.02) 45%,transparent 65%)}
+.gl-rain{background:radial-gradient(circle at 65% 30%,rgba(79,195,247,.12) 0%,rgba(79,195,247,.03) 35%,transparent 55%)}
+.gl-fire{background:radial-gradient(circle at 30% 60%,rgba(255,68,68,.1) 0%,transparent 40%)}
+
+/* Phase 3: Zoom text */
+#c-data{position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;pointer-events:none}
+.c-num{font-family:'IBM Plex Mono',monospace;font-size:clamp(28px,6vw,64px);
+  font-weight:300;color:rgba(255,213,79,0);letter-spacing:2px;
+  animation:numIn .8s ease forwards;opacity:0}
+.c-num .unit{font-size:.4em;color:rgba(220,228,240,.6);margin-left:4px}
+.c-num:nth-child(odd){align-self:flex-start;padding-left:10%}
+.c-num:nth-child(even){align-self:flex-end;padding-right:10%}
+@keyframes numIn{0%{opacity:0;transform:translateY(20px)}100%{opacity:1;transform:translateY(0)}}
+
+.c-label{font-size:clamp(10px,1.5vw,14px);color:rgba(122,149,181,0);letter-spacing:4px;
+  animation:qFade 1s .3s ease forwards;opacity:0;margin:-8px 0 24px}
+
+/* Final line */
+#c-final{position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;text-align:center;padding:0 20px;pointer-events:none}
+#c-final .line1{font-size:clamp(14px,2.5vw,24px);font-weight:300;letter-spacing:3px;
+  color:rgba(220,228,240,0);animation:qFade 2s ease forwards;opacity:0}
+#c-final .line2{font-size:clamp(16px,3vw,32px);font-weight:500;letter-spacing:4px;
+  color:rgba(255,213,79,0);animation:qFade 2s .5s ease forwards;opacity:0;margin-top:16px}
+#c-final .skip{position:absolute;bottom:40px;font-size:10px;letter-spacing:4px;
+  color:rgba(122,149,181,.5);cursor:pointer;padding:8px 20px;border:1px solid rgba(122,149,181,.3);
+  border-radius:2px;transition:all .3s;animation:qFade 1s 1s ease forwards;opacity:0;pointer-events:auto}
+#c-final .skip:hover{color:var(--gold);border-color:var(--gold)}
+
+/* ==================== MAIN APP ==================== */
+#app{display:none;height:100%;flex-direction:column;position:relative}
+#app.show{display:flex}
+
+/* Map container - deep blue ocean */
+#map{flex:1;z-index:1;filter:saturate(.85) brightness(.9) hue-rotate(-10deg)}
+#map .leaflet-tile-pane{filter:brightness(.35) sepia(1) hue-rotate(185deg) saturate(2.5)}
+#map .leaflet-container{background:var(--deep)}
+
+/* Map gradient overlay - deep blue ocean effect */
+#map-overlay{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:linear-gradient(180deg,rgba(6,13,31,.5) 0%,rgba(6,13,31,0) 30%,rgba(6,13,31,0) 70%,rgba(6,13,31,.6) 100),
+  radial-gradient(ellipse at center,transparent 50%,rgba(6,13,31,.3) 100%)}
+
+/* header folded into dashboard */
+
+/* ====== DASHBOARD ====== */
+#dashboard{position:absolute;top:0;left:0;bottom:64px;width:min(360px,88vw);z-index:1500;
+  background:var(--card2);backdrop-filter:blur(20px);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;transition:transform .4s cubic-bezier(.4,0,.2,1)}
+#dashboard.collapsed{transform:translateX(-103%)}
+#dash-head{padding:16px 18px 12px;border-bottom:1px solid var(--line2);display:flex;
+  justify-content:space-between;align-items:flex-start;gap:10px;
+  background:linear-gradient(175deg,rgba(79,195,247,.07),transparent 70%)}
+#dash-head .brand{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:5px;color:rgba(79,195,247,.45)}
+#dash-head h1{font-size:23px;font-weight:200;letter-spacing:3px;color:var(--ink);margin:3px 0 2px;line-height:1.2}
+#dash-head h1 b{font-weight:900;color:var(--hot)}
+#dash-head .sub{font-size:9px;color:var(--mut);letter-spacing:2px}
+#dash-collapse{background:none;border:1px solid var(--line);color:var(--mut);width:26px;height:26px;
+  border-radius:6px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0;transition:all .2s;margin-top:2px}
+#dash-collapse:hover{color:var(--teal);border-color:var(--teal)}
+#dash-tabs{display:flex;border-bottom:1px solid var(--line2)}
+.dash-tab{flex:1;padding:11px 2px;background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--mut);font-size:11px;cursor:pointer;letter-spacing:1px;font-family:'Noto Sans SC';transition:all .2s;white-space:nowrap}
+.dash-tab:hover{color:var(--ink2)}
+.dash-tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:700}
+#dash-body{flex:1;overflow-y:auto;padding:14px 16px 22px}
+#dash-body::-webkit-scrollbar{width:4px}
+#dash-body::-webkit-scrollbar-thumb{background:var(--mut);border-radius:2px}
+.tab-pane{animation:tabIn .3s ease}
+@keyframes tabIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#dash-reopen{position:absolute;top:14px;left:14px;z-index:1400;background:var(--card2);backdrop-filter:blur(16px);
+  border:1px solid var(--line);color:var(--ink2);font-size:11px;letter-spacing:2px;font-family:'Noto Sans SC';
+  padding:8px 14px;border-radius:8px;cursor:pointer;opacity:0;pointer-events:none;transition:all .3s}
+#dash-reopen.show{opacity:1;pointer-events:auto}
+#dash-reopen:hover{color:var(--teal);border-color:var(--teal)}
+#dash-body h2{font-size:17px;color:var(--ink);margin:0 0 10px;font-weight:700;line-height:1.4}
+#dash-body .panel-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--teal);margin-bottom:6px}
+#dash-body .lead{font-size:12px;color:var(--ink2);line-height:1.75;margin-bottom:12px}
+#dash-body .legend{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;padding:10px 12px;
+  background:rgba(79,195,247,.04);border:1px solid var(--line2);border-radius:8px}
+#dash-body .legend .li{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink2);line-height:1.5}
+#dash-body .legend .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+#dash-body .grp{font-size:10px;letter-spacing:2px;color:var(--mut);margin:12px 0 6px;
+  font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;gap:8px}
+#dash-body .grp .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#dash-body .item{padding:9px 10px;border-radius:8px;cursor:pointer;transition:background .2s;
+  border:1px solid transparent;margin-bottom:4px}
+#dash-body .item:hover{background:rgba(79,195,247,.06);border-color:var(--line)}
+#dash-body .item .t{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.4}
+#dash-body .item .d{font-size:11px;color:var(--ink2);margin-top:3px;line-height:1.6}
+#dash-body .item .m{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--mut);margin-top:3px}
+#dash-body .kpi-row{display:flex;gap:8px;margin-bottom:12px}
+#dash-body .kpi{flex:1;background:rgba(79,195,247,.04);border:1px solid var(--line2);border-radius:8px;padding:10px}
+#dash-body .kpi .v{font-size:17px;font-weight:700;color:var(--ink);font-family:'IBM Plex Mono',monospace}
+#dash-body .kpi .l{font-size:9px;color:var(--mut);letter-spacing:1px;margin-top:3px}
+#dash-body .insight{background:rgba(255,107,53,.06);border-left:3px solid var(--hot);padding:9px 12px;
+  border-radius:0 8px 8px 0;font-size:11.5px;color:var(--ink2);line-height:1.7;margin:10px 0}
+#dash-body .insight b{color:var(--hot)}
+#dash-body .foot{font-size:9.5px;color:var(--mut);margin-top:10px;line-height:1.6}
+#dash-body .flow{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;padding:10px 12px;
+  background:rgba(255,213,79,.05);border:1px solid rgba(255,213,79,.14);border-radius:8px}
+#dash-body .flow .fs{display:flex;gap:9px;font-size:11px;color:var(--ink2);line-height:1.65}
+#dash-body .flow .fs .n{font-family:'IBM Plex Mono',monospace;color:var(--gold);font-weight:700;flex-shrink:0;font-size:10px;letter-spacing:1px}
+#dash-body .flow b{color:var(--ink)}
+#dash-body .xlink{color:var(--teal);cursor:pointer;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+#dash-body .xlink:hover{color:var(--ice)}
+.layer-tag{font-size:8.5px;letter-spacing:1px;padding:2px 6px;border-radius:3px;border:1px solid;flex-shrink:0;font-weight:500}
+.layer-tag.q1{color:var(--rain);border-color:rgba(79,195,247,.35);background:rgba(79,195,247,.07)}
+.layer-tag.q2{color:#34c759;border-color:rgba(52,199,89,.35);background:rgba(52,199,89,.07)}
+.layer-tag.q3{color:var(--hot);border-color:rgba(255,107,53,.35);background:rgba(255,107,53,.07)}
+.layer-tags{margin-left:auto;display:flex;gap:4px;align-items:center}
+
+/* ====== LAYERS (in dashboard) ====== */
+#pane-layers h3{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:4px;
+  color:var(--mut);margin:2px 0 10px;text-transform:uppercase}
+.layer-item{display:flex;align-items:center;gap:10px;padding:6px 8px;cursor:pointer;
+  color:var(--mut);font-size:11.5px;transition:all .2s;border-radius:6px}
+.layer-item:hover{color:var(--ink2);background:rgba(79,195,247,.05)}
+.layer-item.on{color:var(--ink)}
+.layer-item .dot{width:7px;height:7px;border-radius:50%;background:var(--mut);transition:all .3s}
+.layer-item.on .dot{background:var(--teal);box-shadow:0 0 8px rgba(79,195,247,.4)}
+#layer-note{margin-top:8px;padding:8px 10px;background:rgba(79,195,247,.05);border:1px solid var(--line2);
+  border-radius:6px;font-size:10px;color:var(--ink2);line-height:1.6;display:none}
+#layer-note .d{font-family:'IBM Plex Mono',monospace;color:var(--teal);font-size:9px;letter-spacing:1px;margin-bottom:3px;display:block}
+#layers.loading .layer-item[data-layer]:not(.on) .dot{opacity:.4}
+
+/* ====== TIMELINE ====== */
+#timeline-bar{position:absolute;bottom:0;left:0;right:0;z-index:1000;padding:14px 24px 18px;
+  background:linear-gradient(to top,rgba(6,13,31,.96) 30%,transparent)}
+#timeline-bar .label{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
+  font-size:8px;color:var(--mut);letter-spacing:2px;margin-bottom:6px}
+#slider{width:100%;-webkit-appearance:none;height:2px;
+  background:linear-gradient(to right,var(--mut) 0%,var(--teal) 50%,var(--gold) 100%);
+  border-radius:1px;outline:none;cursor:pointer}
+#slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--deep);border:2px solid var(--gold);cursor:pointer;
+  box-shadow:0 0 12px rgba(255,213,79,.4)}
+#slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--deep);
+  border:2px solid var(--gold);cursor:pointer}
+#date-display{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:400;
+  color:var(--gold);text-align:center;margin-top:8px;letter-spacing:3px}
+
+/* ====== EVENT PANEL ====== */
+#event-panel{position:absolute;top:0;right:0;bottom:0;width:min(440px,100vw);z-index:2000;
+  background:var(--card2);backdrop-filter:blur(20px);border-left:1px solid var(--line);
+  transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;padding:24px}
+#event-panel.open{transform:translateX(0)}
+#event-panel .close{position:absolute;top:14px;right:18px;font-size:22px;cursor:pointer;
+  color:var(--mut);background:none;border:none;transition:color .2s}
+#event-panel .close:hover{color:var(--ink)}
+#event-panel h2{font-size:20px;font-weight:700;color:var(--ink);margin:36px 0 6px;line-height:1.35}
+#event-panel .type{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:var(--teal);margin-bottom:14px}
+#event-panel .type .ev{background:rgba(255,107,53,.12);color:var(--hot);padding:3px 10px;
+  border-radius:3px;margin-right:8px;font-family:'Noto Sans SC'}
+#event-panel .date{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink2);letter-spacing:1px}
+#event-panel .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+#event-panel .stat{background:rgba(79,195,247,.04);border:1px solid var(--line);
+  padding:12px;border-radius:6px}
+#event-panel .stat .v{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:400}
+#event-panel .stat .l{font-size:9px;color:var(--mut);letter-spacing:2px;margin-top:2px}
+#event-panel .stat .v.red{color:var(--hot)}
+#event-panel .stat .v.orange{color:var(--warn)}
+#event-panel .desc{font-size:12.5px;line-height:1.9;color:var(--ink2);margin:14px 0;
+  border-left:2px solid var(--mut);padding-left:14px}
+#event-panel .chain-title{font-family:'IBM Plex Mono',monospace;font-size:8px;
+  letter-spacing:4px;color:var(--mut);margin:20px 0 10px;text-transform:uppercase}
+.chain-step{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;
+  color:var(--ink);position:relative;padding-left:24px}
+.chain-step::before{content:'';position:absolute;left:7px;top:50%;transform:translateY(-50%);
+  width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px rgba(255,213,79,.4)}
+.chain-step:not(:last-child)::after{content:'';position:absolute;left:9.5px;top:calc(50% + 5px);
+  width:1px;height:calc(100% - 4px);background:linear-gradient(to bottom,var(--gold),var(--line))}
+#event-panel .src{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--mut);
+  margin-top:20px;padding-top:14px;border-top:1px solid var(--line);letter-spacing:.5px}
+#event-panel .src .a{color:var(--gold)}
+
+/* ====== ATTRIBUTION ====== */
+#attribution{background:rgba(79,195,247,.04);border:1px solid rgba(79,195,247,.1);
+  border-radius:8px;padding:14px;margin:18px 0}
+#attribution .level{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#attribution .level .l{font-size:9px;letter-spacing:2px;color:var(--mut)}
+#attribution .badge{padding:4px 12px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:1px}
+#attribution .badge.strong{background:rgba(52,199,89,.12);color:#34c759;border:1px solid rgba(52,199,89,.2)}
+#attribution .badge.medium{background:rgba(255,176,32,.12);color:var(--warn);border:1px solid rgba(255,176,32,.2)}
+#attribution .badge.weak{background:rgba(154,140,123,.1);color:var(--mut);border:1px solid rgba(154,140,123,.15)}
+#attribution p{font-size:10.5px;color:var(--ink2);line-height:1.7}
+
+/* ====== STATS OVERLAY ====== */
+/* ====== STATS (in dashboard) ====== */
+#stats-box{margin-bottom:14px}
+#stats-box h4{font-family:'IBM Plex Mono',monospace;font-size:8px;letter-spacing:4px;
+  color:var(--mut);margin:0 0 8px;text-transform:uppercase}
+#stats-box .row{display:flex;justify-content:space-between;align-items:baseline;
+  padding:6px 0;border-bottom:1px solid var(--line2)}
+#stats-box .row:last-child{border:none}
+#stats-box .row .l{font-size:10px;color:var(--ink2);letter-spacing:1px}
+#stats-box .row .v{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:400}
+#stats-box .row .v.hot{color:var(--hot)}
+#stats-box .row .v.gold{color:var(--gold)}
+#stats-box .row .v.teal{color:var(--teal)}
+
+/* ====== LEAFLET OVERRIDES ====== */
+.leaflet-popup-content-wrapper{background:var(--card2);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.leaflet-popup-tip{background:var(--card2)}
+.leaflet-popup-content{font-family:'Noto Sans SC',sans-serif;font-size:12px;line-height:1.6;margin:12px 16px}
+.leaflet-popup-content b{color:var(--gold)}
+.leaflet-container{background:var(--deep)}
+.leaflet-control-attribution{background:rgba(6,13,31,.7)!important;color:var(--mut)!important;font-size:8px!important}
+
+/* ====== EVENT MARKERS ====== */
+.marker-pulse{animation:pulse 2.5s ease infinite}
+@keyframes pulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* ====== RESPONSIVE ====== */
+@media(max-width:768px){
+  #event-panel{width:100vw}
+  #dashboard{width:100vw;bottom:70px}
+  #dash-reopen{top:auto;bottom:78px;left:12px}
+}
+</style>
+
+<style>
+#music-ctrl{position:fixed;bottom:18px;right:18px;z-index:9999;
+  width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,213,79,.4);
+  background:rgba(6,13,31,.7);backdrop-filter:blur(8px);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .3s;
+  opacity:0;pointer-events:none}
+#music-ctrl.show{opacity:1;pointer-events:auto}
+#music-ctrl:hover{border-color:var(--gold);box-shadow:0 0 16px rgba(255,213,79,.2)}
+#music-ctrl svg{width:18px;height:18px;fill:var(--gold)}
+#music-ctrl.playing svg{animation:musicPulse 1.5s ease infinite}
+@keyframes musicPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+#music-label{position:fixed;bottom:66px;right:18px;z-index:9999;font-size:9px;
+  color:rgba(255,213,79,.5);letter-spacing:2px;writing-mode:vertical-rl;
+  opacity:0;pointer-events:none;transition:opacity .5s}
+#music-label.show{opacity:1}
+</style>
+<audio id="bgm" src="assets/ningxia_live.mp3" preload="auto" loop></audio>
+<button id="music-ctrl" onclick="toggleMusic()" title="背景音乐 · 宁夏（现场版）梁静茹">
+  <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
+</button>
+<div id="music-label">♪ 宁夏 · 梁静茹</div>
+</head>
+<body>
+
+<!-- ====== CINEMATIC OPENING ====== -->
+<div id="cinema">
+  <!-- Phase 2: Globe with data layers -->
+  <div id="c-globe">
+    <img class="earth-img" src="https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg" alt="" draggable="false">
+    <div class="earth-shade"></div>
+    <div class="earth-atmo"></div>
+    <div class="globe-layer gl-temp"></div>
+    <div class="globe-layer gl-sst"></div>
+    <div class="globe-layer gl-rain"></div>
+    <div class="globe-layer gl-fire"></div>
+  </div>
+  <div id="c-question">2026，中国经历了怎样的一个夏天？</div>
+
+  <!-- Phase 3: Sequential data -->
+  <div id="c-data"></div>
+
+  <!-- Phase 4: Final lines + skip -->
+  <div id="c-final">
+    <div class="line1">但真正值得追问的，不是"发生了多少灾害"。</div>
+    <div class="line2">而是—— 它们为什么一个接一个发生？</div>
+    <button class="skip" onclick="skipCinema()">跳过开场 → 进入地图</button>
+  </div>
+</div>
+
+<!-- ====== MAIN APP ====== -->
+<div id="app">
+  <div id="map"></div>
+  <div id="map-overlay"></div>
+
+  <!-- ====== DASHBOARD ====== -->
+  <div id="dashboard">
+    <div id="dash-head">
+      <div>
+        <div class="brand">EXTREME SUMMER · CHINA 2026</div>
+        <h1>极端的<b>一夏</b></h1>
+        <div class="sub">2026中国极端天气灾害链调查</div>
+      </div>
+      <button id="dash-collapse" onclick="toggleDashboard()" title="收起仪表盘">‹</button>
+    </div>
+    <div id="dash-tabs">
+      <button class="dash-tab active" data-tab="what" onclick="setMode('what')">发生了什么</button>
+      <button class="dash-tab" data-tab="why" onclick="setMode('why')">为什么</button>
+      <button class="dash-tab" data-tab="risk" onclick="setMode('risk')">为什么损失大</button>
+      <button class="dash-tab" data-tab="layers" onclick="showTab('layers')">图层</button>
+    </div>
+    <div id="dash-body">
+      <div class="tab-pane" id="pane-what">
+        <div id="stats-box">
+          <h4>Summer 2026 Overview</h4>
+          <div class="row"><span class="l">灾害事件</span><span class="v teal" id="st-events">20</span></div>
+          <div class="row"><span class="l">死亡 / 失踪</span><span class="v hot" id="st-deaths">—</span></div>
+          <div class="row"><span class="l">紧急转移</span><span class="v" id="st-evac">—</span></div>
+          <div class="row"><span class="l">经济损失</span><span class="v hot" id="st-loss">—</span></div>
+          <div class="row"><span class="l">台风生成</span><span class="v gold">17</span></div>
+          <div class="row"><span class="l">台风登陆</span><span class="v gold">7</span></div>
+          <div class="row"><span class="l">温度距平</span><span class="v hot">+0.9℃</span></div>
+        </div>
+        <div class="lead">本页收录 2026 年 6–9 月中国 20 个标志性极端天气事件。点击地图圆点查看事件详情、灾害链与气候归因；拖动底部时间轴逐日回放。<b>「发生了什么 → 为什么 → 为什么损失大」三个标签是这条调查的提问顺序，「图层」页是物证室</b>——卫星影像与归因、损失结论一一对应。</div>
+      </div>
+      <div class="tab-pane" id="pane-why" style="display:none"></div>
+      <div class="tab-pane" id="pane-risk" style="display:none"></div>
+      <div class="tab-pane" id="pane-layers" style="display:none">
+        <h3>Climate Layers</h3>
+        <div class="flow">
+          <div class="fs"><span class="n">三个标签</span><span><b>发生了什么 → 为什么 → 为什么损失大</b>，是这条调查报道的提问顺序，回答的是"问题"。</span></div>
+          <div class="fs"><span class="n">本页图层</span><span>是回答问题的<b>证据（物证室）</b>——每个图层右侧标注它支撑哪个问题：<span class="layer-tag q1">发生</span> <span class="layer-tag q2">归因</span> <span class="layer-tag q3">损失</span>。</span></div>
+          <div class="fs"><span class="n">用法</span><span>打开图层后，<b>拖动底部时间轴到事件日期</b>，卫星影像与地图圆点一一对照，再回到对应标签页看结论。</span></div>
+        </div>
+        <div class="layer-item on" data-layer="events"><span class="dot"></span>灾害事件<span class="layer-tags"><span class="layer-tag q1">发生</span></span></div>
+        <div class="layer-item" data-layer="clouds"><span class="dot"></span>真彩色云图 · MODIS<span class="layer-tags"><span class="layer-tag q1">发生</span><span class="layer-tag q3">损失</span></span></div>
+        <div class="layer-item" data-layer="sst"><span class="dot"></span>海温 SST · GHRSST<span class="layer-tags"><span class="layer-tag q2">归因</span></span></div>
+        <div class="layer-item" data-layer="lst"><span class="dot"></span>陆地温度 · MODIS<span class="layer-tags"><span class="layer-tag q2">归因</span></span></div>
+        <div class="layer-item" data-layer="imerg"><span class="dot"></span>强降雨 · IMERG 实时<span class="layer-tags"><span class="layer-tag q3">损失</span></span></div>
+        <div id="layer-note"></div>
+      </div>
+    </div>
+  </div>
+  <button id="dash-reopen" onclick="toggleDashboard()">☰ 仪表盘</button>
+
+  <div id="timeline-bar">
+    <div class="label"><span>JUN 01</span><span>JUL</span><span>AUG</span><span>SEP</span><span>SEP 14</span></div>
+    <input type="range" id="slider" min="0" max="105" value="105" oninput="onTimeline(this.value)">
+    <div id="date-display" class="mono">2026-09-14</div>
+  </div>
+
+  <div id="event-panel">
+    <button class="close" onclick="closePanel()">✕</button>
+    <div id="event-content"></div>
+  </div>
+</div>
+
+<script>
+// ====== DATA (injected) ======
+let EVENTS=[],META={},map,markers=[],currentMode='what',timelineDate='2026-09-14';
+const FALLBACK = {"meta": {"project": "极端的一夏", "subtitle": "2026中国极端天气灾害链调查", "period": "2026-06-01 至 2026-09-14", "stats": {"avg_temp_anomaly": "+0.9℃", "total_rainfall_mm": 338.4, "typhoons_generated": 17, "typhoons_landfall": 7, "rainfall_events": 15, "deaths_missing": 318, "economic_loss_yi": 571.5, "jul_affected": "1672.9万", "jul_deaths": 318, "jul_loss": 571.5}, "sources": ["国家气象局", "应急管理部", "水利部", "地方政府通报", "东方财富"]}, "events": [{"event_id": "E001", "title": "台风美莎克 #10 — 广西特大暴雨·六蓝水库溃坝", "date_start": "2026-07-01", "date_end": "2026-07-09", "lat": 22.85, "lng": 109.15, "province": "广西", "city": "南宁/贵港/钦州/防城港", "county": "横州等", "disaster_type": "台风", "disaster_subtype": "台风+暴雨+水库溃坝+流域洪水", "weather_system": "台风美莎克残涡滞留+西南季风", "max_temp": null, "max_rainfall": 600.0, "max_wind": null, "deaths": 159, "missing": 10, "injured": 0, "evacuated": 2525000, "affected_population": 2600000, "economic_loss_yi": 221.0, "disaster_chain": ["台风美莎克登陆海南陵水", "二次登陆越南后残涡滞留广西16-26小时", "叠加西南季风引发特大暴雨(61站破纪录,局地400-600mm)", "横州六蓝水库漫顶溃坝(总库容9319万m³)", "溃坝洪水冲毁校椅/云表/马岭等镇", "贵港全城内涝·郁江超警5.68m", "西江2号洪水洪峰过境梧州·全线封航", "广西159人死亡10人失踪"], "evidence_level": "A", "core_case": true, "core_theme": "雨", "description": "2026年首个登陆我国的台风'美莎克'以弱台风强度造成广西历史罕见特大灾害：残涡滞留16-26小时叠加季风引发61站破纪录暴雨，横州六蓝水库溃坝（国务院成立调查评估组），贵港全城内涝，西江2号洪水。广西159人死亡10人失踪，直接损失超221亿。'弱级强灾'反常案例。", "attribution": {"level": "中等证据", "confidence": "中", "note": "残涡滞留+季风叠加是主因；全球变暖提高了台风暴雨强度概率，但路径归因不确定"}, "sources": ["应急管理部", "广西应急厅", "新华社", "国务院调查组"]}, {"event_id": "E002", "title": "横州六蓝水库 7·6 溃坝", "date_start": "2026-07-06", "date_end": "2026-07-08", "lat": 22.85, "lng": 109.15, "province": "广西", "city": "南宁", "county": "横州市校椅镇", "disaster_type": "基础设施险情", "disaster_subtype": "水库溃坝", "weather_system": "关联台风美莎克暴雨", "max_temp": null, "max_rainfall": 600.0, "max_wind": null, "deaths": 26, "missing": 7, "injured": 0, "evacuated": 55000, "affected_population": 55000, "economic_loss_yi": null, "disaster_chain": ["六蓝水库(总库容9319万m³)遭遇历史极值暴雨", "库区24小时降雨超设计标准", "水库漫顶", "坝体溃口", "溃坝洪水沿云表江下泄", "校椅/云表/马岭等镇被淹", "209国道中断", "村庄成孤岛", "26人死亡7人失踪"], "evidence_level": "A", "core_case": true, "core_theme": "水", "description": "横州六蓝水库因台风美莎克极端暴雨漫顶溃坝，为2026年全国最重大单点灾害。国务院成立调查评估组，全链条查清防范应对和应急处置问题与责任。", "attribution": {"level": "基础设施脆弱性", "confidence": "高", "note": "水库设计标准不足是放大因素，极端降雨为触发条件"}, "sources": ["国务院调查组", "新华社", "广西应急厅"]}, {"event_id": "E003", "title": "吐鲁番东坎站49.8℃·艾丁湖50.2℃ — 极端高温", "date_start": "2026-07-15", "date_end": "2026-07-22", "lat": 42.83, "lng": 89.28, "province": "新疆", "city": "吐鲁番", "county": "高昌区", "disaster_type": "高温", "disaster_subtype": "极端高温", "weather_system": "热穹顶(大陆暖高压)+盆地聚热效应", "max_temp": 50.2, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 620000, "economic_loss_yi": 2.3, "disaster_chain": ["热穹顶(大陆暖高压滞留)", "吐鲁番盆地聚热效应(低海拔+焚风+沙漠)", "艾丁湖站50.2℃(全国首个50℃+)", "东坎站49.8℃(破当地观测史纪录)", "地表温度超60℃", "夜间气温频繁≥30℃"], "evidence_level": "A", "core_case": true, "core_theme": "热", "description": "7月21日吐鲁番艾丁湖站50.2℃为今年全国国家级气象站最高，东坎站49.8℃破当地观测史纪录。地表温度超60℃，夜间气温频繁≥30℃。", "attribution": {"level": "强证据", "confidence": "高", "note": "人类活动显著提高此类极端高温发生概率(归因研究)"}, "sources": ["中央气象台", "新疆气象局"]}, {"event_id": "E004", "title": "台风巴威 #9 — 登陆浙江玉环·北上致北方洪涝", "date_start": "2026-07-07", "date_end": "2026-07-13", "lat": 28.08, "lng": 121.24, "province": "浙江/辽宁/吉林", "city": "台州/温州/沈阳", "county": "多县", "disaster_type": "台风", "disaster_subtype": "台风登陆+北方洪涝", "weather_system": "台风巴威+副高引导+冷涡配合", "max_temp": null, "max_rainfall": null, "max_wind": 40.0, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["近海加强为超强台风级", "7月11日23:20登陆浙江玉环坎门(40m/s)", "半小时后二次登陆乐清", "深入内陆", "残涡北上与冷涡配合", "辽宁/吉林/黑龙江/河北严重洪涝", "吉林农田受灾"], "evidence_level": "A", "core_case": true, "core_theme": "海", "description": "台风巴威7月11日以台风级(40m/s)登陆浙江玉环坎门，为当时年内最强登陆台风。残涡北上致辽宁/吉林/黑龙江/河北严重洪涝。", "attribution": {"level": "中等证据", "confidence": "中", "note": "海温偏高增强台风强度"}, "sources": ["中央气象台", "澎湃", "央广网"]}, {"event_id": "E005", "title": "台风红霞 #12 — 登陆广东惠东·年内最强(45m/s)", "date_start": "2026-07-25", "date_end": "2026-07-28", "lat": 22.97, "lng": 114.85, "province": "广东", "city": "惠州/汕尾/深圳", "county": "惠东县平海镇", "disaster_type": "台风", "disaster_subtype": "强台风登陆", "weather_system": "台风红霞+副高引导", "max_temp": null, "max_rainfall": null, "max_wind": 45.0, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 90000, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["近海'一夜连跳三级'迅猛增强", "7月26日03:50强台风级(45m/s)登陆惠东平海", "惠东/惠阳14级狂风", "特大暴雨(惠州/汕尾/深圳东部)", "残涡北上湖北", "惠州9万群众紧急安置"], "evidence_level": "A", "core_case": false, "core_theme": "海", "description": "台风红霞以45m/s强台风级登陆广东惠东平海，超越巴威成为2026年登陆我国最强台风。惠州9万群众紧急安置。", "attribution": {"level": "中等证据", "confidence": "中", "note": "海温偏高支持近海快速增强"}, "sources": ["广东省气象台", "央广网"]}, {"event_id": "E006", "title": "台风白海豚 #13 — 强台风登陆浙江·深入内陆湖北", "date_start": "2026-08-09", "date_end": "2026-08-14", "lat": 28.08, "lng": 121.24, "province": "浙江/湖北/河南", "city": "台州/黄冈/郑州", "county": "玉环等", "disaster_type": "台风", "disaster_subtype": "强台风登陆+深入内陆", "weather_system": "台风白海豚+副高引导", "max_temp": null, "max_rainfall": null, "max_wind": 45.0, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["超长远洋奔袭充分增强", "8月9日强台风级(14级)登陆浙江玉环坎门(与巴威同点)", "两度登陆", "深入内陆湖北", "河南山洪预警", "太湖2026年1号洪水"], "evidence_level": "A", "core_case": false, "core_theme": "海", "description": "台风白海豚8月9日以强台风级登陆浙江玉环（与巴威同点），深入内陆湖北，太湖形成1号洪水。", "attribution": {"level": "中等证据", "confidence": "中", "note": ""}, "sources": ["中央气象台", "中新网"]}, {"event_id": "E007", "title": "台风沙德尔 #18 — 三次登陆·江西遂川泥石流", "date_start": "2026-08-19", "date_end": "2026-09-05", "lat": 26.1, "lng": 114.2, "province": "江西/浙江/福建", "city": "吉安/台州/漳州", "county": "遂川县等", "disaster_type": "台风", "disaster_subtype": "三次登陆+极端暴雨+泥石流", "weather_system": "台风沙德尔(超长生命史15天+路径诡异)+冷空气+西南季风", "max_temp": null, "max_rainfall": null, "max_wind": 45.0, "deaths": 7, "missing": 9, "injured": 0, "evacuated": 5339, "affected_population": 183600, "economic_loss_yi": 3.43, "disaster_chain": ["8月19日生成(西北太平洋)", "路径诡异'突然拐弯'", "8月28日登陆浙江玉环+温州龙湾(两度)", "残涡入南海'复活'", "9月3日三登福建漳浦古雷", "对江西影响7天", "遂川泥石流(5死7失联)", "福建福鼎破纪录降雨", "湘炎陵山洪"], "evidence_level": "A", "core_case": true, "core_theme": "海", "description": "台风沙德尔超长生命史(15天+)三次登陆我国，路径诡异。对江西风雨影响长达7天，遂川泥石流5死7失联。中央救灾资金2.4亿拨付5省。", "attribution": {"level": "中等证据", "confidence": "中", "note": "冷空气南下偏早与活跃西南季风交汇加大致灾性"}, "sources": ["中央气象台", "应急管理部", "新华社"]}, {"event_id": "E008", "title": "西藏吉隆 8·26 跨境冰崩泥石流", "date_start": "2026-08-26", "date_end": "2026-09-02", "lat": 28.3, "lng": 85.3, "province": "西藏", "city": "日喀则", "county": "吉隆县吉隆口岸", "disaster_type": "冰岩崩塌", "disaster_subtype": "跨境冰崩+泥石流+堰塞", "weather_system": "喜马拉雅冰冻圈变化", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 43, "missing": 519, "injured": 0, "evacuated": 1200, "affected_population": 3000, "economic_loss_yi": null, "disaster_chain": ["尼泊尔境内高位冰川崩塌", "冰崩体高速下滑冲刷山体", "形成巨型泥石流", "跨境冲击吉隆口岸", "口岸上方形成堰塞体", "溢流泄洪冲毁口岸设施", "43人死亡(含外籍)", "519人失联(261名外籍涉23国)"], "evidence_level": "A", "core_case": true, "core_theme": "冰", "description": "尼泊尔境内高位冰川崩塌引发跨境巨型泥石流，冲击西藏吉隆口岸。43人死亡519人失联(含261名外籍涉23国)。中科院姚檀栋院士带队调查冰崩源区。", "attribution": {"level": "中等证据", "confidence": "中", "note": "高山冰冻圈变暖是背景因素；专家称冰冻圈灾害呈全新显著特征"}, "sources": ["西藏应急厅", "自然资源部专家组", "澎湃", "央视"]}, {"event_id": "E009", "title": "四川盆地高温伏旱", "date_start": "2026-07-10", "date_end": "2026-08-25", "lat": 30.66, "lng": 104.06, "province": "四川", "city": "成都/遂宁/南充", "county": "多县", "disaster_type": "干旱", "disaster_subtype": "高温伏旱", "weather_system": "大陆暖高压持续控制", "max_temp": 42.3, "max_rainfall": null, "max_wind": null, "deaths": 2, "missing": 0, "injured": 890, "evacuated": 0, "affected_population": 47000000, "economic_loss_yi": 28.9, "disaster_chain": ["暖高压持续控制盆地", "降水偏少50%+", "蒸发量剧增", "土壤失墒", "河流流量锐减", "农业干旱", "饮用水困难", "电力供需矛盾"], "evidence_level": "A", "core_case": true, "core_theme": "旱", "description": "四川盆地持续高温干旱，最长连续高温超30天。上半年全国干旱受灾1082万人次，直接损失55.4亿(与常年持平)。", "attribution": {"level": "强证据", "confidence": "高", "note": "全球变暖使高温干旱复合事件概率显著提高"}, "sources": ["四川气象局", "应急管理部"]}, {"event_id": "E010", "title": "重庆持续极端高温 42.3℃", "date_start": "2026-07-15", "date_end": "2026-08-25", "lat": 29.83, "lng": 106.44, "province": "重庆", "city": "重庆", "county": "北碚/沙坪坝等", "disaster_type": "高温", "disaster_subtype": "持续极端高温+森林火险", "weather_system": "副高持续控制+盆地地形", "max_temp": 42.3, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 32000000, "economic_loss_yi": null, "disaster_chain": ["副高持续控制(三重锅盖锁死散热)", "北碚42.3℃领跑全国", "加长版三伏40天", "森林火险红色预警", "重庆森林防火动员部署会"], "evidence_level": "A", "core_case": false, "core_theme": "热", "description": "重庆7-8月持续极端高温，北碚42.3℃领跑全国，与吐鲁番高温南北呼应。8月23日仍发布高温橙色预警。", "attribution": {"level": "强证据", "confidence": "高", "note": "副高+盆地地形为直接原因"}, "sources": ["重庆气象台"]}, {"event_id": "E011", "title": "大兴安岭雷击火（成功扑灭）", "date_start": "2026-08-10", "date_end": "2026-08-14", "lat": 51.72, "lng": 126.66, "province": "黑龙江", "city": "大兴安岭", "county": "呼中区", "disaster_type": "山火", "disaster_subtype": "雷击火", "weather_system": "干雷暴活动", "max_temp": null, "max_rainfall": null, "max_wind": 15.2, "deaths": 0, "missing": 0, "injured": 3, "evacuated": 0, "affected_population": 0, "economic_loss_yi": 0.8, "disaster_chain": ["干雷暴过境(无降水)", "雷击引燃林地", "火势初起", "航空消防+地面快速扑救", "4日内全部扑灭"], "evidence_level": "A", "core_case": true, "core_theme": "火", "description": "大兴安岭因干雷暴引发雷击火，航空消防快速响应4日内全部扑灭，展示成功预警价值。", "attribution": {"level": "无直接归因", "confidence": "N/A", "note": "此案例展示成功预警与快速响应"}, "sources": ["黑龙江森林防火指挥部"]}, {"event_id": "E012", "title": "江西遂川 9·5 泥石流", "date_start": "2026-09-05", "date_end": "2026-09-08", "lat": 26.1, "lng": 114.2, "province": "江西", "city": "吉安", "county": "遂川县高坪镇", "disaster_type": "滑坡泥石流", "disaster_subtype": "泥石流掩埋", "weather_system": "台风沙德尔连日暴雨", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 5, "missing": 7, "injured": 0, "evacuated": 5339, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["台风沙德尔对江西影响7天", "连日极端暴雨", "山体饱和", "9月5日凌晨4时突发泥石流", "12栋房屋被掩埋(8栋完全损毁)", "道路塌方", "救援中多次二次塌方"], "evidence_level": "A", "core_case": true, "core_theme": "未来", "description": "江西遂川高坪镇凌晨突发泥石流掩埋民房，5死7失联。12支专业队伍搜救。夏季结束但极端天气未结束。", "attribution": {"level": "中等证据", "confidence": "中", "note": ""}, "sources": ["新华社", "江西日报"]}, {"event_id": "E013", "title": "湖南炎陵 8·29 山洪泥石流", "date_start": "2026-08-29", "date_end": "2026-09-02", "lat": 26.49, "lng": 113.77, "province": "湖南", "city": "株洲", "county": "炎陵县", "disaster_type": "山洪", "disaster_subtype": "山洪+泥石流", "weather_system": "台风沙德尔极端暴雨", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 2, "missing": 2, "injured": 0, "evacuated": 0, "affected_population": 12512, "economic_loss_yi": null, "disaster_chain": ["台风沙德尔极端降雨", "水位超历史极值", "山洪暴发", "泥石流", "房屋倒塌", "道路塌方"], "evidence_level": "A", "core_case": false, "core_theme": "山", "description": "炎陵县10个乡镇受灾，个别地方山洪泥石流灾害致2死2失联。", "attribution": {"level": "中等证据", "confidence": "中", "note": ""}, "sources": ["炎陵融媒", "新华网"]}, {"event_id": "E014", "title": "西江2026年第1号洪水（龙舟水）", "date_start": "2026-06-22", "date_end": "2026-06-25", "lat": 23.48, "lng": 111.28, "province": "广西", "city": "梧州", "county": "武宣-藤县-梧州", "disaster_type": "洪涝", "disaster_subtype": "流域性洪水", "weather_system": "华南前汛期暴雨(龙舟水偏强63%)", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["华南前汛期降水较常年偏多63%", "柳江及上游来水", "西江武宣站25000m³/s", "洪峰6月24日过境梧州", "平稳过境未超警"], "evidence_level": "A", "core_case": false, "core_theme": "水", "description": "西江形成2026年第1号洪水，武宣站25000m³/s，洪峰平稳通过梧州。我国今年大江大河首个编号洪水。", "attribution": {"level": "中等证据", "confidence": "中", "note": "龙舟水偏强63%"}, "sources": ["梧州水文中心", "中新网"]}, {"event_id": "E015", "title": "河南强对流 — 11级雷暴大风+冰雹", "date_start": "2026-07-06", "date_end": "2026-07-31", "lat": 34.7, "lng": 113.6, "province": "河南", "city": "安阳/鹤壁/三门峡", "county": "多县", "disaster_type": "强对流", "disaster_subtype": "雷暴大风+冰雹", "weather_system": "冷涡+干冷空气+暖湿气流", "max_temp": null, "max_rainfall": 70.0, "max_wind": 33.0, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["冷涡后部干冷空气", "暖湿气流交汇", "多次强对流过程", "11级雷暴大风", "冰雹橙色预警(三门峡/灵宝)", "短时强降水70mm/h"], "evidence_level": "A", "core_case": false, "core_theme": "风", "description": "河南7月多次强对流，11级雷暴大风+冰雹橙色预警。", "attribution": {"level": "证据不足", "confidence": "低", "note": "强对流归因困难"}, "sources": ["河南气象台"]}, {"event_id": "E016", "title": "太湖2026年第1号洪水", "date_start": "2026-08-11", "date_end": "2026-08-20", "lat": 31.0, "lng": 120.3, "province": "江苏", "city": "苏州", "county": "太湖流域", "disaster_type": "洪涝", "disaster_subtype": "湖泊洪水", "weather_system": "台风白海豚降雨", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["台风白海豚苏南强降雨", "太湖水位达警戒", "编号为太湖2026年1号洪水"], "evidence_level": "A", "core_case": false, "core_theme": "水", "description": "受台风白海豚影响太湖水位达警戒，编号为太湖2026年1号洪水。", "attribution": {"level": "中等证据", "confidence": "中", "note": ""}, "sources": ["大众新闻"]}, {"event_id": "E017", "title": "北方洪涝(辽宁/吉林/黑龙江/河北)", "date_start": "2026-07-11", "date_end": "2026-07-20", "lat": 41.8, "lng": 123.4, "province": "辽宁/吉林/黑龙江/河北", "city": "沈阳/长春/哈尔滨", "county": "多地", "disaster_type": "洪涝", "disaster_subtype": "北方流域洪水+农田内涝", "weather_system": "台风巴威残涡+冷涡+季风", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["巴威螺旋云系北上", "叠加美莎克水汽通道", "弧状强降雨带笼罩北方", "辽宁/吉林/黑龙江/河北严重洪涝", "吉林农田受灾", "河流洪水"], "evidence_level": "B", "core_case": false, "core_theme": "水", "description": "台风巴威残涡北上引发北方罕见洪涝，辽宁/吉林/黑龙江/河北受灾严重。", "attribution": {"level": "中等证据", "confidence": "中", "note": "台风雨带北上事件罕见"}, "sources": ["微公益紧急救灾", "头条辟谣"]}, {"event_id": "E018", "title": "湖北鄂东极端强对流", "date_start": "2026-07-06", "date_end": "2026-07-07", "lat": 30.2, "lng": 115.0, "province": "湖北", "city": "黄石/黄冈/鄂州", "county": "鄂东多地", "disaster_type": "强对流", "disaster_subtype": "夜间强对流", "weather_system": "台风美莎克残涡激发", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 0, "economic_loss_yi": null, "disaster_chain": ["台风残涡+季风水汽", "夜间极端强对流", "雷暴大风/短时强降水", "局地灾害"], "evidence_level": "B", "core_case": false, "core_theme": "风", "description": "7月6日晚湖北鄂东多地遭遇台风残涡激发的极端强对流。", "attribution": {"level": "证据不足", "confidence": "低", "note": ""}, "sources": ["百度"]}, {"event_id": "E019", "title": "青藏高原冰川加速消融", "date_start": "2026-06-01", "date_end": "2026-09-01", "lat": 30.5, "lng": 90.65, "province": "西藏", "city": "那曲/日喀则", "county": "多县", "disaster_type": "冰冻圈异常", "disaster_subtype": "冰川消融加速", "weather_system": "青藏高原升温速率高于全国平均", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 0, "missing": 0, "injured": 0, "evacuated": 0, "affected_population": 500000, "economic_loss_yi": 0, "disaster_chain": ["青藏高原升温速率为全球平均2-3倍", "冰川消融加速", "冰湖面积扩大/数量增加", "冰湖溃决风险升高", "吉隆冰崩为个案"], "evidence_level": "B", "core_case": false, "core_theme": "冰", "description": "青藏高原冰川消融加速，冰湖风险升高，为吉隆冰崩的背景。", "attribution": {"level": "强证据", "confidence": "高", "note": "青藏高原升温速率为全球平均2-3倍"}, "sources": ["中科院青藏高原研究所"]}, {"event_id": "E020", "title": "全国自然灾害月度统计（7月）", "date_start": "2026-07-01", "date_end": "2026-07-31", "lat": 35.0, "lng": 105.0, "province": "全国", "city": null, "county": null, "disaster_type": "统计", "disaster_subtype": "月度汇总", "weather_system": "多种灾害叠加", "max_temp": null, "max_rainfall": null, "max_wind": null, "deaths": 318, "missing": 0, "injured": 0, "evacuated": 2525000, "affected_population": 16729000, "economic_loss_yi": 571.5, "disaster_chain": ["7月以台风/洪涝/地质灾害为主", "台风灾害各项指标均居首位", "318人死亡失踪", "1672.9万人次受灾", "571.5亿直接经济损失"], "evidence_level": "A", "core_case": false, "core_theme": null, "description": "应急管理部7月统计：1672.9万人次受灾，318人死亡失踪，571.5亿元损失。台风灾害各项指标居首位。", "attribution": {"level": "无直接归因", "confidence": "N/A", "note": "官方统计口径"}, "sources": ["应急管理部", "国家防灾减灾救灾委办公室"]}]};
+
+// ====== CINEMATIC SEQUENCE ======
+const seq=[
+  {t:0.5, fn:()=>document.getElementById('c-question').style.animationPlayState='running'},
+  {t:2.5, fn:()=>document.getElementById('c-globe').classList.add('visible')},
+  {t:3.5, fn:()=>showLayer(0)},
+  {t:4.2, fn:()=>showLayer(1)},
+  {t:4.8, fn:()=>showLayer(2)},
+  {t:5.4, fn:()=>showLayer(3)},
+  {t:6.0, fn:()=>showNum('49.8','℃','全国最高气温 · 吐鲁番')},
+  {t:6.5, fn:()=>showNum('17','个','台风生成')},
+  {t:7.0, fn:()=>showNum('7','个','登陆中国')},
+  {t:7.5, fn:()=>showNum('15','轮','大范围强降雨')},
+  {t:8.0, fn:()=>showNum('318','人','死亡或失踪')},
+  {t:8.5, fn:()=>showNum('571.5','亿元','直接经济损失')},
+  {t:9.5, fn:()=>showFinal()},
+  {t:12.0, fn:()=>skipCinema()}
+];
+let seqTimers=[];
+
+function startCinema(){
+  seq.forEach(s=>seqTimers.push(setTimeout(s.fn, s.t*1000)));
+  // Show final lines container
+  setTimeout(()=>{
+    const f=document.getElementById('c-final');
+    f.style.pointerEvents='auto';
+    f.querySelector('.line1').style.animationPlayState='running';
+    f.querySelector('.line2').style.animationPlayState='running';
+    f.querySelector('.skip').style.animationPlayState='running';
+  },9500);
+}
+
+function showLayer(i){
+  const layers=document.querySelectorAll('.globe-layer');
+  if(layers[i]) layers[i].classList.add('show');
+}
+
+function showNum(val,unit,label){
+  const c=document.getElementById('c-data');
+  const div=document.createElement('div');
+  div.className='c-num';
+  div.innerHTML=`${val}<span class="unit">${unit}</span>`;
+  c.appendChild(div);
+  const l=document.createElement('div');
+  l.className='c-label';l.textContent=label;
+  c.appendChild(l);
+}
+
+function showFinal(){
+  document.getElementById('c-data').style.opacity='0.1';
+  const f=document.getElementById('c-final');
+  f.style.display='flex';
+}
+
+let musicStarted = false;
+function tryStartMusic(){
+  document.getElementById('music-ctrl').classList.add('show');
+  if(musicStarted) return;
+  const bgm = document.getElementById('bgm');
+  bgm.volume = 0.35;
+  bgm.play().then(()=>{
+    musicStarted = true;
+    document.getElementById('music-ctrl').classList.add('playing');
+    document.getElementById('music-label').classList.add('show');
+  }).catch(()=>{ /* 自动播放被阻止：按钮已显示，等用户点击 */ });
+}
+function toggleMusic(){
+  const bgm = document.getElementById('bgm');
+  const ctrl = document.getElementById('music-ctrl');
+  if(bgm.paused){ bgm.play(); ctrl.classList.add('playing'); }
+  else{ bgm.pause(); ctrl.classList.remove('playing'); }
+}
+function skipCinema(){
+  seqTimers.forEach(t=>clearTimeout(t));
+  document.getElementById('cinema').classList.add('done');
+  setTimeout(()=>{tryStartMusic();},1500);
+  setTimeout(()=>{
+    document.getElementById('cinema').style.display='none';
+    document.getElementById('app').classList.add('show');
+    initMap();
+  },1200);
+}
+
+// ====== INIT MAP ======
+function initMap(){
+  map=L.map('map',{zoomControl:false,attributionControl:false}).setView([30,105],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'©OSM',maxZoom:18}).addTo(map);
+  map.createPane('gibs');
+  map.getPane('gibs').style.zIndex=350;
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  loadEvents();
+}
+
+async function loadEvents(){
+  try{
+    const r=await fetch('/api/events');const d=await r.json();EVENTS=d.events;
+    META=await (await fetch('/api/meta')).json();
+  }catch(e){EVENTS=FALLBACK.events;META=FALLBACK.meta;}
+  renderEvents();updateStats();
+}
+
+const TYPE_COLORS={
+  '台风':'#4fc3f7','暴雨洪涝':'#29b6f6','强对流':'#ffb020','山洪滑坡':'#ab47bc',
+  '洪涝':'#29b6f6','高温':'#ff6b35','基础设施险情':'#ffd54f','山火':'#ff6b35',
+  '干旱':'#ff9800','冰岩崩塌':'#b0bec5','滑坡泥石流':'#ab47bc','暴雨内涝':'#29b6f6',
+  '山洪':'#4fc3f7','台风暴雨':'#4fc3f7','冰冻圈异常':'#90a4ae','高温火险':'#ff6b35',
+  '沙尘暴':'#d4a574','高温火险':'#ff6b35'
+};
+
+function markerIcon(c,size,isCore){
+  return L.divIcon({
+    className:'marker-custom',
+    html:`<div style="width:${size*2}px;height:${size*2}px;border-radius:50%;
+      background:radial-gradient(circle,${c}40 0%,${c}15 60%,transparent 100%);
+      border:1.5px solid ${c};box-shadow:0 0 ${size}px ${c}30;
+      ${isCore?'animation:pulse 2.5s ease infinite;':''}"></div>`,
+    iconSize:[size*2,size*2],iconAnchor:[size,size]
+  });
+}
+
+function renderEvents(){
+  markers.forEach(m=>map.removeLayer(m));markers=[];
+  EVENTS.forEach(e=>{
+    const c=TYPE_COLORS[e.disaster_type]||'#ffd54f';
+    const size=Math.max(6,Math.min(24,Math.sqrt(e.deaths||1)*2.5+Math.sqrt(e.economic_loss_yi||1)*2));
+    const isCore=e.core_case;
+    const m=L.marker([e.lat,e.lng],{icon:markerIcon(c,size,isCore)}).addTo(map);
+    m.options.baseColor=c;m.options.baseSize=size;m.options.isCore=isCore;
+    m.bindPopup(`
+      <div style="min-width:220px">
+        <div style="font-family:'IBM Plex Mono';font-size:8px;color:#3d5a80;letter-spacing:3px;text-transform:uppercase">${e.disaster_type}</div>
+        <div style="font-size:13px;font-weight:700;color:#dce4f0;margin:6px 0;line-height:1.4">${e.title}${isCore?' <span style="color:#ffd54f;font-size:9px">★核心</span>':''}</div>
+        <div style="font-family:'IBM Plex Mono';font-size:10px;color:#7a95b1">${e.date_start}</div>
+        <div style="font-size:11px;color:#ff6b35;margin-top:6px">死亡 ${e.deaths} · 失踪 ${e.missing}</div>
+        <div style="font-size:11px;color:#ffb020">损失 ${e.economic_loss_yi??'—'} 亿</div>
+        <div style="margin-top:10px"><a href="#" onclick="openEvent('${e.event_id}');return false"
+          style="color:#4fc3f7;font-size:11px;text-decoration:none;border-bottom:1px solid rgba(79,195,247,.3)">进入事件 →</a></div>
+      </div>`,{maxWidth:280});
+    markers.push(m);
+  });
+}
+
+function openEvent(id){
+  const e=EVENTS.find(x=>x.event_id===id);if(!e)return;
+  const c=document.getElementById('event-content');
+  const chainHtml=e.disaster_chain.map(s=>`<div class="chain-step">${s}</div>`).join('');
+  const attr=e.attribution||{};
+  const badgeCls=attr.level==='强证据'?'strong':(attr.level==='中等证据'?'medium':'weak');
+  c.innerHTML=`
+    <div class="type"><span class="ev">${e.disaster_type}</span>${e.disaster_subtype||''}</div>
+    <h2>${e.title}</h2>
+    <div class="date">${e.date_start} → ${e.date_end} ｜ ${e.province} ${e.city||''}</div>
+    <div class="stats">
+      <div class="stat"><div class="v red">${e.deaths}</div><div class="l">DEATHS</div></div>
+      <div class="stat"><div class="v red">${e.missing}</div><div class="l">MISSING</div></div>
+      <div class="stat"><div class="v orange">${(e.evacuated||0).toLocaleString()}</div><div class="l">EVACUATED</div></div>
+      <div class="stat"><div class="v red">${e.economic_loss_yi??'—'}亿</div><div class="l">LOSS (CNY)</div></div>
+    </div>
+    <div class="desc">${e.description}</div>
+    <div class="chain-title">⚠ Disaster Chain</div>
+    ${chainHtml}
+    <div style="display:flex;gap:14px;margin:14px 0;flex-wrap:wrap">
+      ${e.max_rainfall!=null?`<div class="mono" style="font-size:12px;color:var(--rain)">◍ ${e.max_rainfall}mm</div>`:''}
+      ${e.max_temp!=null?`<div class="mono" style="font-size:12px;color:var(--hot)">◉ ${e.max_temp}℃</div>`:''}
+      ${e.max_wind!=null?`<div class="mono" style="font-size:12px;color:var(--gold)">≫ ${e.max_wind}m/s</div>`:''}
+    </div>
+    ${attr.level?`
+    <div id="attribution">
+      <div class="level"><span class="l">Climate Attribution</span><span class="badge ${badgeCls}">${attr.level}</span></div>
+      <p>${attr.note}</p>
+    </div>`:''}
+    <div class="src">Evidence: <span class="a">${e.evidence_level}</span> · Source: ${e.sources.join(' · ')}</div>`;
+  document.getElementById('event-panel').classList.add('open');
+  map.flyTo([e.lat,e.lng],7,{duration:1.2});
+}
+
+function closePanel(){
+  document.getElementById('event-panel').classList.remove('open');
+  map.flyTo([30,105],5,{duration:1});
+}
+
+function setMode(mode){
+  currentMode=mode;
+  document.querySelectorAll('.dash-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===mode));
+  ['what','why','risk','layers'].forEach(t=>{
+    const p=document.getElementById('pane-'+t);
+    if(p)p.style.display=(t===mode)?'':'none';
+  });
+  if(mode==='why')renderWhy();
+  if(mode==='risk')renderRisk();
+  markers.forEach((m,i)=>{
+    const e=EVENTS[i];let c;
+    if(mode==='why'){const a=e.attribution||{};c=a.level==='强证据'?'#34c759':(a.level==='中等证据'?'#ffb020':'#5a6a7a');}
+    else if(mode==='risk'){const l=e.economic_loss_yi||0;c=l>50?'#ff3b30':l>20?'#ff6b35':l>5?'#ffb020':'rgba(122,149,181,.4)';}
+    m.setIcon(markerIcon(c||m.options.baseColor,m.options.baseSize,mode==='what'&&m.options.isCore));
+  });
+}
+
+function showTab(tab){
+  currentMode='what';
+  document.querySelectorAll('.dash-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ['what','why','risk','layers'].forEach(t=>{
+    const p=document.getElementById('pane-'+t);
+    if(p)p.style.display=(t===tab)?'':'none';
+  });
+}
+
+function toggleDashboard(){
+  const d=document.getElementById('dashboard');
+  d.classList.toggle('collapsed');
+  document.getElementById('dash-reopen').classList.toggle('show',d.classList.contains('collapsed'));
+}
+
+function renderWhy(){
+  const info=document.getElementById('pane-why');
+  const lv=e=>{const a=(e.attribution||{}).level;return a==='强证据'?'strong':(a==='中等证据'?'medium':'weak');};
+  const col={strong:'#34c759',medium:'#ffb020',weak:'#5a6a7a'};
+  const grpName={strong:'强证据 · 归因明确',medium:'中等证据 · 直接原因清楚，气候贡献量级不确定',weak:'证据不足 / 无直接归因'};
+  const groups={strong:[],medium:[],weak:[]};
+  EVENTS.forEach(e=>{if(e.disaster_type==='统计')return;groups[lv(e)].push(e);});
+  const item=e=>`<div class="item" onclick="openEvent('${e.event_id}')">
+    <div class="t">${e.title}</div>
+    <div class="d">${(e.attribution||{}).note||'—'}</div>
+    <div class="m">${e.date_start} · ${e.province}</div></div>`;
+  info.innerHTML=`
+    <div class="sub">ATTRIBUTION · 归因图谱</div>
+    <h2>为什么是这个夏天？</h2>
+    <div class="lead">2026年夏：副高异常偏强偏西、西南季风偏活跃、西北太平洋海温偏高——多种环流配置罕见叠加，而全球变暖抬高了高温与极端暴雨的概率基线。地图上每个圆点按<b style="color:#34c759">气候归因证据强度</b>着色，点击下方条目查看每个事件的归因说明。</div>
+    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>归因要靠物证支撑——到「图层」页打开<b>海温 SST</b>（台风能量来源）与<b>陆地温度</b>（热穹顶证据），把时间轴拖到事件日期亲眼对照。<span class="xlink" onclick="showTab('layers')">打开图层 →</span></span></div></div>
+    <div class="legend">
+      <div class="li"><span class="dot" style="background:#34c759"></span><span>强证据 — 归因研究证实：变暖显著推高该类事件发生概率</span></div>
+      <div class="li"><span class="dot" style="background:#ffb020"></span><span>中等证据 — 天气尺度直接原因清楚，气候变暖的贡献量级不确定</span></div>
+      <div class="li"><span class="dot" style="background:#5a6a7a"></span><span>证据不足 / 无直接归因 — 强对流等小尺度事件目前难以归因</span></div>
+    </div>
+    ${['strong','medium','weak'].map(k=>groups[k].length?`
+      <div class="grp"><span class="dot" style="background:${col[k]}"></span>${grpName[k]} · ${groups[k].length}</div>
+      ${groups[k].map(item).join('')}`:'').join('')}
+    <div class="insight"><b>解读：</b>高温干旱类事件归因证据最强（发生概率成倍提高）；台风与暴雨是本季伤亡和损失的主因，其强度增强受海温偏高支持，但路径类归因仍有不确定性；强对流尺度太小，科学上尚无法对单一事件定责。</div>`;
+}
+
+function renderRisk(){
+  const info=document.getElementById('pane-risk');
+  const real=EVENTS.filter(e=>e.disaster_type!=='统计');
+  const withLoss=real.filter(e=>e.economic_loss_yi).sort((a,b)=>b.economic_loss_yi-a.economic_loss_yi);
+  const total=Math.round(real.reduce((s,e)=>s+(e.economic_loss_yi||0),0)*10)/10;
+  const dm=real.reduce((s,e)=>s+(e.deaths||0)+(e.missing||0),0);
+  const evac=real.reduce((s,e)=>s+(e.evacuated||0),0);
+  const top3=withLoss.slice(0,3).reduce((s,e)=>s+e.economic_loss_yi,0);
+  const official=(META.stats||{}).economic_loss_yi;
+  const tier=l=>l>50?'#ff3b30':l>20?'#ff6b35':l>5?'#ffb020':'rgba(122,149,181,.6)';
+  const item=e=>`<div class="item" onclick="openEvent('${e.event_id}')">
+    <div class="t">${e.title}</div>
+    <div class="d" style="color:${tier(e.economic_loss_yi)};font-family:'IBM Plex Mono',monospace;font-weight:600">${e.economic_loss_yi} 亿元${e.deaths?` · 死亡${e.deaths}`:''}${e.missing?` · 失踪${e.missing}`:''}${e.evacuated?` · 转移${(e.evacuated/10000).toFixed(1)}万人`:''}</div>
+    <div class="m">灾害链 ${e.disaster_chain.length} 环 · ${e.disaster_subtype||e.disaster_type}</div></div>`;
+  info.innerHTML=`
+    <div class="sub">LOSS ANALYSIS · 损失图谱</div>
+    <h2>为什么损失这么大？</h2>
+    <div class="kpi-row">
+      <div class="kpi"><div class="v">${total}亿</div><div class="l">20事件直接损失</div></div>
+      <div class="kpi"><div class="v">${dm}</div><div class="l">死亡 · 失踪</div></div>
+      <div class="kpi"><div class="v">${(evac/10000).toFixed(0)}万</div><div class="l">紧急转移</div></div>
+    </div>
+    <div class="legend">
+      <div class="li"><span class="dot" style="background:#ff3b30"></span><span>损失 &gt; 50 亿</span></div>
+      <div class="li"><span class="dot" style="background:#ff6b35"></span><span>20 – 50 亿</span></div>
+      <div class="li"><span class="dot" style="background:#ffb020"></span><span>5 – 20 亿</span></div>
+      <div class="li"><span class="dot" style="background:rgba(122,149,181,.5)"></span><span>&lt; 5 亿 / 官方未公布</span></div>
+    </div>
+    <div class="insight"><b>放大器 ① 灾害链：</b>损失不是单点事故——台风→残涡滞留→破纪录暴雨→水库溃坝→流域洪水，每一环都放大上一环。仅前三大事件就占总损失 ${Math.round(top3/total*100)}%。</div>
+    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>「图层」页的<b>真彩色云图</b>可回看灾害当天真实云系（如 7·1 美莎克残涡、7·11 巴威登陆日），<b>强降雨</b>层看实时雨强——云图即灾害链第一环的物证。<span class="xlink" onclick="showTab('layers')">打开图层 →</span></span></div></div>
+    <div class="insight"><b>放大器 ② 承灾体暴露：</b>水库大坝、口岸城镇、农业与人口大省恰好压在极端降雨带上——六蓝水库溃坝、吉隆口岸被冲毁，都是"极端天气 × 脆弱设施"的复合结果，天气只是扳机。</div>
+    <div class="insight"><b>放大器 ③ 夜间突发：</b>遂川泥石流凌晨4时、鄂东强对流夜间爆发——预警窗口被压缩到小时级甚至分钟级，伤亡因此集中在最脆弱的时段。</div>
+    <div class="grp" style="margin-top:14px"><span class="dot" style="background:#ff3b30"></span>按损失排序 · ${withLoss.length} 个有统计的事件</div>
+    ${withLoss.map(item).join('')}
+    <div class="foot">注：${official?`官方口径7月全国自然灾害直接损失 ${official} 亿元（含全部灾害类型）；`:''}本页为20个事件库累计口径，部分事件与统计口径存在重叠；"未公布"损失的事件仍可能造成重大人员伤亡。</div>`;
+}
+
+function onTimeline(v){
+  const start=new Date('2026-06-01');
+  const d=new Date(start.getTime()+v*86400000);
+  timelineDate=d.toISOString().slice(0,10);
+  document.getElementById('date-display').textContent=timelineDate;
+  markers.forEach((m,i)=>{
+    const e=EVENTS[i];
+    if(e.date_start<=timelineDate){if(!map.hasLayer(m))m.addTo(map);}
+    else{if(map.hasLayer(m))map.removeLayer(m);}
+  });
+  Object.entries(activeLayers).forEach(([k,ly])=>{
+    const def=LAYER_DEFS[k];
+    if(def&&def.timeSync)ly.setUrl(def.url(timelineDate));
+  });
+  const active=Object.keys(activeLayers);
+  if(active.length){
+    const def=LAYER_DEFS[active[active.length-1]];
+    if(def.timeSync)showLayerNote(def.note+` · 影像日期 ${timelineDate}`);
+  }
+}
+
+function updateStats(){
+  const deaths=EVENTS.reduce((s,e)=>s+(e.deaths||0),0);
+  const missing=EVENTS.reduce((s,e)=>s+(e.missing||0),0);
+  const evac=EVENTS.reduce((s,e)=>s+(e.evacuated||0),0);
+  const loss=EVENTS.reduce((s,e)=>s+(e.economic_loss_yi||0),0).toFixed(1);
+  document.getElementById('st-events').textContent=EVENTS.length;
+  document.getElementById('st-deaths').textContent=`${deaths}/${missing}`;
+  document.getElementById('st-evac').textContent=(evac/10000).toFixed(0)+'万';
+  document.getElementById('st-loss').textContent=loss+'亿';
+}
+
+document.querySelectorAll('.layer-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    const key=item.dataset.layer;
+    const on=!item.classList.contains('on');
+    item.classList.toggle('on',on);
+    if(!EVENTS.length)return;
+    if(key==='events'){
+      markers.forEach(m=>{ if(on){if(!map.hasLayer(m))m.addTo(map);} else {if(map.hasLayer(m))map.removeLayer(m);} });
+    }else if(LAYER_DEFS[key]){
+      toggleGibsLayer(key,on);
+    }
+  });
+});
+
+// ====== GIBS CLIMATE LAYERS (NASA, 免费无Key, 有2026真实存档) ======
+const GIBS='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best';
+const LAYER_DEFS={
+  clouds:{url:d=>`${GIBS}/MODIS_Terra_CorrectedReflectance_TrueColor/default/${d}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
+    maxNativeZoom:9,opacity:1,timeSync:true,
+    note:'MODIS Terra 每日真彩色卫星影像。拖动底部时间轴到事件日期（如 7月11日 巴威登陆），可见当天真实云系。'},
+  sst:{url:d=>`${GIBS}/GHRSST_L4_MUR_Sea_Surface_Temperature/default/${d}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`,
+    maxNativeZoom:7,opacity:.85,timeSync:true,
+    note:'GHRSST MUR 海表温度。红/橙色暖水是台风的能量来源——对照西北太平洋暖池与各台风生成位置。'},
+  lst:{url:d=>`${GIBS}/MODIS_Terra_Land_Surface_Temp_Day/default/${d}/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png`,
+    maxNativeZoom:7,opacity:.8,timeSync:true,
+    note:'MODIS 白天地表温度。7月中下旬新疆（吐鲁番）与四川盆地的深红色块即"热穹顶"的直接证据。'},
+  imerg:{url:()=>`${GIBS}/IMERG_Precipitation_Rate/default/${new Date(Date.now()-86400000).toISOString().slice(0,10)}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`,
+    maxNativeZoom:6,opacity:.8,timeSync:false,
+    note:'GPM IMERG 实时降雨率（服务端仅保留近30天，无法回看夏季事件）。颜色越深雨强越大。'},
+};
+let activeLayers={};
+function toggleGibsLayer(key,on){
+  const panel=document.getElementById('pane-layers');
+  if(on){
+    const d=LAYER_DEFS[key];
+    const ly=L.tileLayer(d.url(d.timeSync?timelineDate:undefined),{
+      opacity:d.opacity,maxNativeZoom:d.maxNativeZoom,maxZoom:18,pane:'gibs'});
+    ly.on('tileerror',()=>{ if(!panel.dataset.err) {panel.dataset.err='1';
+      showLayerNote('部分瓦片加载失败——该日期/区域可能超出卫星覆盖或数据源暂时不可达');}});
+    ly.addTo(map);
+    activeLayers[key]=ly;
+    showLayerNote(d.note+(d.timeSync?` · 影像日期 ${timelineDate}`:' · 实时'));
+  }else{
+    if(activeLayers[key]){map.removeLayer(activeLayers[key]);delete activeLayers[key];}
+    const rest=Object.keys(activeLayers);
+    if(rest.length){
+      const d=LAYER_DEFS[rest[rest.length-1]];
+      showLayerNote(d.note+(d.timeSync?` · 影像日期 ${timelineDate}`:' · 实时'));
+    }else{
+      document.getElementById('layer-note').style.display='none';
+      delete panel.dataset.err;
+    }
+  }
+}
+function showLayerNote(text){
+  const el=document.getElementById('layer-note');
+  el.innerHTML=`<span class="d">DATA · NASA GIBS</span>${text}`;
+  el.style.display='block';
+}
+
+
+
+// ====== BOOT ======
+window.addEventListener('load',()=>{
+  document.addEventListener('click',function once(){tryStartMusic();document.removeEventListener('click',once);});
+  document.addEventListener('WeixinJSBridgeReady',function onceW(){tryStartMusic();},{once:true});
+  startCinema();
+});
+</script>
+</body>
+</html>
