@@ -166,9 +166,15 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
 #dash-body .grp{font-size:10px;letter-spacing:2px;color:var(--mut);margin:12px 0 6px;
   font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;gap:8px}
 #dash-body .grp .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-#dash-body .item{padding:9px 10px;border-radius:8px;cursor:pointer;transition:background .2s;
-  border:1px solid transparent;margin-bottom:4px}
-#dash-body .item:hover{background:rgba(79,195,247,.06);border-color:var(--line)}
+#dash-body .item{padding:9px 10px;border-radius:8px;cursor:pointer;transition:all .2s;
+  border:1px solid rgba(79,195,247,.32);background:rgba(79,195,247,.04);margin-bottom:5px}
+#dash-body .item:hover{background:rgba(79,195,247,.1);border-color:var(--teal);box-shadow:0 0 10px rgba(79,195,247,.15)}
+#dash-body .tip-cta{display:flex;align-items:center;justify-content:center;gap:8px;
+  margin:0 0 12px;padding:10px 12px;border-radius:8px;pointer-events:none;
+  background:rgba(255,213,79,.13);border:1px solid rgba(255,213,79,.5);
+  color:#ffd54f;font-size:13px;font-weight:700;letter-spacing:2px;font-family:'Noto Sans SC';
+  animation:ctaGlow 2s ease infinite}
+@keyframes ctaGlow{0%,100%{box-shadow:0 0 0 rgba(255,213,79,0)}50%{box-shadow:0 0 18px rgba(255,213,79,.35)}}
 #dash-body .item .t{font-size:12.5px;color:var(--ink);font-weight:600;line-height:1.4}
 #dash-body .item .d{font-size:11px;color:var(--ink2);margin-top:3px;line-height:1.6}
 #dash-body .item .m{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--mut);margin-top:3px}
@@ -208,6 +214,8 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   white-space:nowrap;opacity:0;transform:translateX(46px) scale(.5);transform-origin:right center;
   transition:transform .45s cubic-bezier(.34,1.45,.64,1),opacity .3s;transition-delay:var(--d);
   box-shadow:0 4px 16px rgba(0,0,0,.45)}
+'.fan-item{cursor:grab;touch-action:none}
+.fan-item.dragging{cursor:grabbing;opacity:.92;transition:none}
 .fan-item .fchip{font-size:15px;line-height:1}
 .fan-item .fst{width:8px;height:8px;border-radius:50%;background:#51677f;flex-shrink:0;transition:all .25s}
 .fan-item.on{border-color:#34c759;box-shadow:0 0 14px rgba(52,199,89,.4)}
@@ -228,6 +236,23 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   #layer-fan{bottom:104px;right:12px}
   #layer-fan .fan-item{right:10px!important;padding:8px 12px;font-size:12px}
 }
+
+/* ====== EVENT MINI-MAP & WEATHER ====== */
+#mini-map-wrap{position:relative;height:132px;border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);margin:14px 0 4px;cursor:pointer;transition:border-color .2s}
+#mini-map-wrap:hover{border-color:var(--teal)}
+#mini-map{position:absolute;inset:0}
+.mm-tip{position:absolute;left:0;right:0;bottom:0;z-index:500;pointer-events:none;text-align:center;
+  background:linear-gradient(transparent,rgba(6,13,31,.92));color:var(--teal);
+  font-size:10.5px;font-weight:600;letter-spacing:1px;padding:18px 10px 7px}
+.wx-bars{display:flex;align-items:flex-end;gap:3px;height:88px;margin:8px 0 2px}
+.wx-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+.wx-bar{width:72%;max-width:26px;background:linear-gradient(180deg,#4fc3f7,#1565c0);border-radius:3px 3px 0 0;min-height:2px}
+.wx-col.ev .wx-bar{background:linear-gradient(180deg,#ffd54f,#ff8f00);box-shadow:0 0 8px rgba(255,213,79,.45)}
+.wx-col.ev .wx-d{color:var(--gold);font-weight:700}
+.wx-v{font-family:'IBM Plex Mono',monospace;font-size:8.5px;color:var(--rain);margin-bottom:2px;white-space:nowrap}
+.wx-d{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--mut)}
+.wx-note{font-size:9.5px;color:var(--mut);line-height:1.6;margin-top:6px}
 
 /* ====== TIMELINE ====== */
 #timeline-bar{position:absolute;bottom:0;left:0;right:0;z-index:1000;padding:14px 24px 18px;
@@ -432,14 +457,14 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   <button id="dash-reopen" onclick="toggleDashboard()">☰ 返回仪表盘</button>
 
   <!-- ====== LAYER FAN (on map) ====== -->
-  <button id="layers-fab" onclick="toggleLayerFan()"><span class="fico">▦</span>图层</button>
+  <button id="layers-fab" onclick="toggleLayerFan()"><span class="fico">▦</span>天气图层</button>
   <div id="layer-fan">
     <div id="fan-hub">
       <div class="ft">图层作用 · LAYER ROLE</div>
       <div class="fb" id="fan-role">点选弧上的图层，叠加到地图。真彩色云图可回看事件当天的真实云系，海温与陆地温度是归因物证，强降雨看实时雨强。</div>
       <div class="fs">
         <div class="ft">用法说明 · HOW TO</div>
-        <div class="fb">打开图层后<b>拖动底部时间轴到事件日期</b>，卫星影像与灾害圆点实时对照，地图层次即时变化；再次点击可关闭。</div>
+        <div class="fb">打开图层后<b>拖动底部时间轴到事件日期</b>，卫星影像与灾害圆点实时对照；<b>四个选项可按住拖动</b>到地图任意位置（陆温居大陆、海温居海面、降雨居雨带）；再次点击选项或按钮可关闭。</div>
       </div>
     </div>
   </div>
@@ -749,6 +774,10 @@ function openEvent(id){
       <div class="stat"><div class="v orange">${(e.evacuated||0).toLocaleString()}</div><div class="l">EVACUATED</div></div>
       <div class="stat"><div class="v red">${e.economic_loss_yi??'—'}亿</div><div class="l">LOSS (CNY)</div></div>
     </div>
+    <div id="mini-map-wrap" onclick="goFullMap('${e.event_id}')" title="点击进入全图查看天气图层">
+      <div id="mini-map"></div>
+      <div class="mm-tip">📍 点击进入全图 · 查看天气详情</div>
+    </div>
     <div class="desc">${e.description}</div>
     <div class="chain-title">⚠ Disaster Chain</div>
     ${chainHtml}
@@ -757,6 +786,7 @@ function openEvent(id){
       ${e.max_temp!=null?`<div class="mono" style="font-size:12px;color:var(--hot)">◉ ${e.max_temp}℃</div>`:''}
       ${e.max_wind!=null?`<div class="mono" style="font-size:12px;color:var(--gold)">≫ ${e.max_wind}m/s</div>`:''}
     </div>
+    <div id="wx-box"><div class="chain-title">🌧 天气详情 · 历史实况加载中…</div></div>
     ${attr.level?`
     <div id="attribution">
       <div class="level"><span class="l">Climate Attribution</span><span class="badge ${badgeCls}">${attr.level}</span></div>
@@ -765,12 +795,63 @@ function openEvent(id){
     ${repHtml}
     <div class="src">Evidence: <span class="a">${e.evidence_level}</span> · Source: ${e.sources.join(' · ')}</div>`;
   document.getElementById('event-panel').classList.add('open');
+  initMiniMap(e);
+  loadWeather(e);
   map.flyTo([e.lat,e.lng],7,{duration:1.2});
 }
 
-function closePanel(){
+function closePanel(skipHome){
   document.getElementById('event-panel').classList.remove('open');
-  map.flyTo([30,105],5,{duration:1});
+  if(!skipHome)map.flyTo([30,105],5,{duration:1});
+}
+
+let miniMap=null,wxToken=0;const wxCache={};
+function initMiniMap(e){
+  if(miniMap){miniMap.remove();miniMap=null;}
+  const box=document.getElementById('mini-map');if(!box)return;
+  miniMap=L.map('mini-map',{zoomControl:false,attributionControl:false,dragging:false,
+    scrollWheelZoom:false,doubleClickZoom:false,tap:false,keyboard:false}).setView([e.lat,e.lng],5);
+  L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
+    {subdomains:['1','2','3','4'],maxZoom:18}).addTo(miniMap);
+  L.circleMarker([e.lat,e.lng],{radius:9,color:'#ff3b30',weight:2.5,fillColor:'#ff3b30',fillOpacity:.55}).addTo(miniMap);
+  setTimeout(()=>{if(miniMap)miniMap.invalidateSize();},180);
+}
+function goFullMap(id){
+  const e=EVENTS.find(x=>x.event_id===id);if(!e)return;
+  closePanel(true);
+  map.flyTo([e.lat,e.lng],7,{duration:1.2});
+  const v=Math.max(0,Math.min(105,Math.round((new Date(e.date_start)-new Date('2026-06-01'))/86400000)));
+  const s=document.getElementById('slider');
+  if(s){s.value=v;onTimeline(v);}
+}
+async function loadWeather(e){
+  const box=document.getElementById('wx-box');if(!box)return;
+  if(wxCache[e.event_id]){box.innerHTML=wxCache[e.event_id];return;}
+  const token=++wxToken;
+  const d0=new Date(e.date_start),d1=new Date(e.date_end);
+  d0.setDate(d0.getDate()-2);d1.setDate(d1.getDate()+2);
+  const fmt=d=>d.toISOString().slice(0,10);
+  const url=`https://archive-api.open-meteo.com/v1/archive?latitude=${e.lat}&longitude=${e.lng}`+
+    `&start_date=${fmt(d0)}&end_date=${fmt(d1)}&daily=precipitation_sum,temperature_2m_max&timezone=Asia%2FShanghai`;
+  try{
+    const r=await fetch(url);const d=await r.json();
+    if(token!==wxToken)return;
+    const days=d.daily.time,rain=d.daily.precipitation_sum,tmax=d.daily.temperature_2m_max;
+    const maxR=Math.max(...rain.map(v=>v||0),1);
+    const html=`<div class="chain-title">🌧 天气详情 · 事件坐标 ERA5 历史实况</div>
+      <div class="wx-bars">`+days.map((t,i)=>{
+        const rr=rain[i]||0,h=Math.round(rr/maxR*100),isEv=t>=e.date_start&&t<=e.date_end;
+        return `<div class="wx-col${isEv?' ev':''}" title="${t}：降雨 ${rr}mm / 最高 ${tmax[i]}℃">
+          <div class="wx-bar" style="height:${Math.max(3,h)}%"></div>
+          <div class="wx-v">${rr>=1?Math.round(rr):'·'}</div>
+          <div class="wx-d">${t.slice(8)}</div></div>`;
+      }).join('')+`</div>
+      <div class="wx-note">蓝柱=日降雨量(mm)·<b style="color:var(--gold)">金柱=事件区间</b>·悬停看数值；数据源 Open-Meteo（ERA5 再分析，滞后约5天）。</div>`;
+    wxCache[e.event_id]=html;
+    if(token===wxToken)box.innerHTML=html;
+  }catch(err){
+    if(token===wxToken)box.innerHTML='<div class="chain-title">🌧 天气详情</div><div class="wx-note">历史天气数据加载失败（网络受限），可稍后重试。</div>';
+  }
 }
 
 function setMode(mode){
@@ -811,7 +892,8 @@ function renderWhy(){
     <div class="sub">ATTRIBUTION · 归因图谱</div>
     <h2>为什么是这个夏天？</h2>
     <div class="lead">2026年夏：副高异常偏强偏西、西南季风偏活跃、西北太平洋海温偏高——多种环流配置罕见叠加，而全球变暖抬高了高温与极端暴雨的概率基线。地图上每个圆点按<b style="color:#34c759">气候归因证据强度</b>着色，点击下方条目查看每个事件的归因说明。</div>
-    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>归因要靠物证支撑——到「图层」页打开<b>海温 SST</b>（台风能量来源）与<b>陆地温度</b>（热穹顶证据），把时间轴拖到事件日期亲眼对照。</span></div></div>
+    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>归因要靠物证支撑——点地图右下角「▦ 图层」打开<b>海温 SST</b>（台风能量来源）与<b>陆地温度</b>（热穹顶证据），把时间轴拖到事件日期亲眼对照。</span></div></div>
+    <div class="tip-cta">👆 点击事件标题，查看事件详情与深度报道</div>
     <div class="legend">
       <div class="li"><span class="dot" style="background:#34c759"></span><span>强证据 — 归因研究证实：变暖显著推高该类事件发生概率</span></div>
       <div class="li"><span class="dot" style="background:#ffb020"></span><span>中等证据 — 天气尺度直接原因清楚，气候变暖的贡献量级不确定</span></div>
@@ -852,7 +934,7 @@ function renderRisk(){
       <div class="li"><span class="dot" style="background:rgba(122,149,181,.5)"></span><span>&lt; 5 亿 / 官方未公布</span></div>
     </div>
     <div class="insight"><b>放大器 ① 灾害链：</b>损失不是单点事故——台风→残涡滞留→破纪录暴雨→水库溃坝→流域洪水，每一环都放大上一环。仅前三大事件就占总损失 ${Math.round(top3/total*100)}%。</div>
-    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>「图层」页的<b>真彩色云图</b>可回看灾害当天真实云系（如 7·1 美莎克残涡、7·11 巴威登陆日），<b>强降雨</b>层看实时雨强——云图即灾害链第一环的物证。</span></div></div>
+    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>地图右下角「▦ 图层」的<b>真彩色云图</b>可回看灾害当天真实云系（如 7·1 美莎克残涡、7·11 巴威登陆日），<b>强降雨</b>层看实时雨强——云图即灾害链第一环的物证。</span></div></div>
     <div class="insight"><b>放大器 ② 承灾体暴露：</b>水库大坝、口岸城镇、农业与人口大省恰好压在极端降雨带上——六蓝水库溃坝、吉隆口岸被冲毁，都是"极端天气 × 脆弱设施"的复合结果，天气只是扳机。</div>
     <div class="insight"><b>放大器 ③ 夜间突发：</b>遂川泥石流凌晨4时、鄂东强对流夜间爆发——预警窗口被压缩到小时级甚至分钟级，伤亡因此集中在最脆弱的时段。</div>
     <div class="grp" style="margin-top:14px"><span class="dot" style="background:#ff3b30"></span>按损失排序 · ${withLoss.length} 个有统计的事件</div>
@@ -894,24 +976,53 @@ function updateStats(){
 
 // ====== LAYER FAN UI ======
 const FAN_META=[
-  {key:'clouds',ico:'☁️',label:'真彩色云图',x:6,y:14,d:'0ms'},
-  {key:'sst',ico:'🌊',label:'海温 SST',x:16,y:64,d:'60ms'},
-  {key:'lst',ico:'🌡️',label:'陆地温度',x:34,y:114,d:'120ms'},
-  {key:'imerg',ico:'🌧️',label:'强降雨',x:60,y:164,d:'180ms'},
+  {key:'clouds',ico:'☁️',label:'真彩色云图',x:250,y:340,mx:16,my:262,d:'0ms',
+   hint:'整体大气实况'},
+  {key:'sst',ico:'🌊',label:'海温 SST',x:120,y:296,mx:16,my:192,d:'60ms',
+   hint:'居于海面'},
+  {key:'lst',ico:'🌡️',label:'陆地温度',x:400,y:430,mx:150,my:330,d:'120ms',
+   hint:'居于大陆'},
+  {key:'imerg',ico:'🌧️',label:'强降雨 · 实时',x:270,y:150,mx:150,my:158,d:'180ms',
+   hint:'居于雨带'},
 ];
 function buildFan(){
   const fan=document.getElementById('layer-fan');
   if(!fan||fan.dataset.built)return;
   fan.dataset.built='1';
+  const mobile=innerWidth<768;
   FAN_META.forEach(m=>{
     const el=document.createElement('div');
-    el.className='fan-item';el.dataset.layer=m.key;
-    el.style.right=m.x+'px';el.style.bottom=m.y+'px';el.style.setProperty('--d',m.d);
+    el.className='fan-item';el.dataset.layer=m.key;el.title=(m.hint?m.hint+' · ':'')+'可拖动';
+    el.style.right=(mobile?m.mx:m.x)+'px';
+    el.style.bottom=(mobile?m.my:m.y)+'px';
+    el.style.setProperty('--d',m.d);
     el.innerHTML=`<span class="fchip">${m.ico}</span>${m.label}<span class="fst"></span>`;
-    el.addEventListener('click',()=>{
-      const on=!el.classList.contains('on');
-      el.classList.toggle('on',on);
-      toggleGibsLayer(m.key,on);
+    let moved=false;
+    el.addEventListener('pointerdown',ev=>{
+      if(ev.button!==undefined&&ev.button!==0)return;
+      const sx=ev.clientX,sy=ev.clientY,sr=parseInt(el.style.right),sb=parseInt(el.style.bottom);
+      moved=false;el.setPointerCapture(ev.pointerId);el.classList.add('dragging');
+      const mv=e=>{
+        const dx=e.clientX-sx,dy=e.clientY-sy;
+        if(Math.abs(dx)>5||Math.abs(dy)>5)moved=true;
+        if(!moved)return;
+        el.style.right=Math.max(8,Math.min(innerWidth-60,sr-dx))+'px';
+        el.style.bottom=Math.max(70,Math.min(innerHeight-90,sb-dy))+'px';
+      };
+      const up=()=>{
+        el.classList.remove('dragging');
+        el.removeEventListener('pointermove',mv);
+        el.removeEventListener('pointerup',up);
+        el.removeEventListener('pointercancel',up);
+        if(!moved){
+          const on=!el.classList.contains('on');
+          el.classList.toggle('on',on);
+          toggleGibsLayer(m.key,on);
+        }
+      };
+      el.addEventListener('pointermove',mv);
+      el.addEventListener('pointerup',up);
+      el.addEventListener('pointercancel',up);
     });
     fan.appendChild(el);
   });
