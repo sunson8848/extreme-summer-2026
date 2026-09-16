@@ -249,8 +249,8 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
 #mini-map-wrap{position:relative;height:132px;border-radius:10px;overflow:hidden;
   border:1px solid var(--line);margin:14px 0 4px;cursor:pointer;transition:border-color .2s}
 #mini-map-wrap:hover{border-color:var(--teal)}
-#mini-map{position:absolute;inset:0}
-.mm-click{position:absolute;inset:0;z-index:700;cursor:pointer;background:transparent}
+#mini-map{position:absolute;inset:0;pointer-events:none}
+.mm-click{position:absolute;left:0;top:0;right:0;bottom:0;z-index:1001;cursor:pointer;background:transparent}
 .mm-tip{position:absolute;left:0;right:0;bottom:0;z-index:500;pointer-events:none;text-align:center;
   background:linear-gradient(transparent,rgba(6,13,31,.92));color:var(--teal);
   font-size:10.5px;font-weight:600;letter-spacing:1px;padding:18px 10px 7px}
@@ -834,10 +834,15 @@ function initMiniMap(e){
 function goFullMap(id){
   const e=EVENTS.find(x=>x.event_id===id);if(!e)return;
   closePanel(true);
-  map.flyTo([e.lat,e.lng],7,{duration:1.2});
+  map.flyTo([e.lat,e.lng],8,{duration:1.2});
   const v=Math.max(0,Math.min(105,Math.round((new Date(e.date_start)-new Date('2026-06-01'))/86400000)));
   const s=document.getElementById('slider');
   if(s){s.value=v;onTimeline(v);}
+  if(!activeLayers.clouds&&LAYER_DEFS.clouds){
+    toggleGibsLayer('clouds',true);
+    const chip=document.querySelector('.fan-item[data-layer="clouds"]');
+    if(chip)chip.classList.add('on');
+  }
 }
 async function loadWeather(e){
   const box=document.getElementById('wx-box');if(!box)return;
@@ -916,7 +921,7 @@ function renderWhy(){
     <h2>为什么是这个夏天？</h2>
     <div class="lead">2026年夏：副高异常偏强偏西、西南季风偏活跃、西北太平洋海温偏高——多种环流配置罕见叠加，而全球变暖抬高了高温与极端暴雨的概率基线。地图上每个圆点按<b style="color:#34c759">气候归因证据强度</b>着色，点击下方条目查看每个事件的归因说明。</div>
     <div class="flow"><div class="fs"><span class="n">证据联动</span><span>归因要靠物证支撑——点地图右下角「▦ 图层」打开<b>海温 SST</b>（台风能量来源）与<b>陆地温度</b>（热穹顶证据），把时间轴拖到事件日期亲眼对照。</span></div></div>
-    <div class="tip-cta">👆 点击事件标题，查看事件详情与深度报道</div>
+    <div class="tip-cta">👇 点击事件标题，查看事件详情与深度报道</div>
     <div class="legend">
       <div class="li"><span class="dot" style="background:#34c759"></span><span>强证据 — 归因研究证实：变暖显著推高该类事件发生概率</span></div>
       <div class="li"><span class="dot" style="background:#ffb020"></span><span>中等证据 — 天气尺度直接原因清楚，气候变暖的贡献量级不确定</span></div>
