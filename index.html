@@ -251,9 +251,6 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
 #mini-map-wrap:hover{border-color:var(--teal)}
 #mini-map{position:absolute;inset:0;pointer-events:none}
 .mm-click{position:absolute;left:0;top:0;right:0;bottom:0;z-index:1001;cursor:pointer;background:transparent}
-.mm-tip{position:absolute;left:0;right:0;bottom:0;z-index:500;pointer-events:none;text-align:center;
-  background:linear-gradient(transparent,rgba(6,13,31,.92));color:var(--teal);
-  font-size:10.5px;font-weight:600;letter-spacing:1px;padding:18px 10px 7px}
 .wx-bars{display:flex;align-items:flex-end;gap:3px;height:88px;margin:8px 0 2px}
 .wx-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
 .wx-bar{width:72%;max-width:26px;background:linear-gradient(180deg,#4fc3f7,#1565c0);border-radius:3px 3px 0 0;min-height:2px}
@@ -290,9 +287,10 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);
   overflow-y:auto;padding:24px}
 #event-panel.open{transform:translateX(0)}
-#event-panel .close{position:absolute;top:14px;right:18px;font-size:22px;cursor:pointer;
-  color:var(--mut);background:none;border:none;transition:color .2s}
-#event-panel .close:hover{color:var(--ink)}
+#event-panel .close{position:absolute;top:10px;right:14px;width:40px;height:40px;font-size:28px;line-height:38px;
+  text-align:center;cursor:pointer;color:#eaf4ff;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.25);border-radius:50%;transition:all .2s;z-index:10}
+#event-panel .close:hover{color:#fff;background:rgba(255,107,53,.35);border-color:var(--hot)}
 #event-panel h2{font-size:20px;font-weight:700;color:var(--ink);margin:36px 0 6px;line-height:1.35}
 #event-panel .type{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;
   color:var(--teal);margin-bottom:14px}
@@ -791,7 +789,6 @@ function openEvent(id){
     <div id="mini-map-wrap" title="点击进入全图查看天气图层">
       <div id="mini-map"></div>
       <div class="mm-click" onclick="goFullMap('${e.event_id}')"></div>
-      <div class="mm-tip">📍 点击进入全图 · 查看天气详情</div>
     </div>
     <div class="desc">${e.description}</div>
     <div class="chain-title">⚠ Disaster Chain</div>
