@@ -829,20 +829,20 @@ function initMiniMap(e){
   L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}',
     {subdomains:['1','2','3','4'],maxZoom:18}).addTo(miniMap);
   L.circleMarker([e.lat,e.lng],{radius:9,color:'#ff3b30',weight:2.5,fillColor:'#ff3b30',fillOpacity:.55}).addTo(miniMap);
+  const cont=miniMap.getContainer();
+  if(cont)cont.style.pointerEvents='none';
+  const wrap=document.getElementById('mini-map-wrap');
+  if(wrap)wrap.addEventListener('click',()=>goFullMap(e.event_id),true);
   setTimeout(()=>{if(miniMap)miniMap.invalidateSize();},180);
 }
 function goFullMap(id){
   const e=EVENTS.find(x=>x.event_id===id);if(!e)return;
+  const now=Date.now();if(now-(goFullMap._t||0)<400)return;goFullMap._t=now;
   closePanel(true);
-  map.flyTo([e.lat,e.lng],8,{duration:1.2});
+  map.flyTo([e.lat,e.lng],7,{duration:1.2});
   const v=Math.max(0,Math.min(105,Math.round((new Date(e.date_start)-new Date('2026-06-01'))/86400000)));
   const s=document.getElementById('slider');
   if(s){s.value=v;onTimeline(v);}
-  if(!activeLayers.clouds&&LAYER_DEFS.clouds){
-    toggleGibsLayer('clouds',true);
-    const chip=document.querySelector('.fan-item[data-layer="clouds"]');
-    if(chip)chip.classList.add('on');
-  }
 }
 async function loadWeather(e){
   const box=document.getElementById('wx-box');if(!box)return;
