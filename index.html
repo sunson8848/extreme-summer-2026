@@ -131,9 +131,10 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   color:rgba(79,195,247,.45);display:block;margin-bottom:8px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #dash-head .dh-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
-#dash-head h1{font-size:23px;font-weight:200;letter-spacing:3px;color:var(--ink);margin:3px 0 2px;line-height:1.2}
-#dash-head h1 b{font-weight:900;color:var(--hot)}
-#dash-head .sub{font-size:9.5px;color:#b9d6f2;letter-spacing:2px}
+#dash-head .dh-title{text-align:center;font-size:clamp(15px,4.6vw,19px);font-weight:800;
+  letter-spacing:.5px;color:var(--ink);margin:0 0 9px;line-height:1.35}
+#dash-head .dh-title .hl{color:#ff5a2e;font-weight:900}
+#dash-head .brand{display:block;text-align:center;overflow:hidden;text-overflow:ellipsis}
 #dash-collapse{display:flex;align-items:center;gap:5px;flex-shrink:0;white-space:nowrap;
   background:rgba(79,195,247,.16);border:1px solid rgba(79,195,247,.45);color:var(--teal);
   padding:9px 13px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:700;
@@ -428,18 +429,15 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   <!-- ====== DASHBOARD ====== -->
   <div id="dashboard">
     <div id="dash-head">
-      <div class="brand">EXTREME SUMMER · CHINA 2026</div>
+      <h1 class="dh-title">2026年夏天中国极端天气<span class="hl">灾害链</span>调查</h1>
       <div class="dh-row">
-        <div>
-          <h1>极端的<b>一夏</b></h1>
-          <div class="sub">2026中国极端天气灾害链调查</div>
-        </div>
         <div class="dh-music">
           <button id="music-ctrl" onclick="toggleMusic()" title="背景音乐 · 宁夏（现场版）梁静茹">
             <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
           </button>
           <span id="music-label">♪ 宁夏 · 梁静茹</span>
         </div>
+        <span class="brand">EXTREME SUMMER · CHINA 2026</span>
         <button id="dash-collapse" onclick="toggleDashboard()" title="收起仪表盘，查看地图">点击进入地图<span class="ar">›</span></button>
       </div>
     </div>
