@@ -226,6 +226,7 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
   #fan-hub{width:calc(100vw - 28px);top:12px;right:14px}
   #layers-fab{bottom:104px;right:12px;padding:9px 13px;font-size:12px}
   #layer-fan{bottom:104px;right:12px}
+  #layer-fan .fan-item{right:10px!important;padding:8px 12px;font-size:12px}
 }
 
 /* ====== TIMELINE ====== */
@@ -428,7 +429,7 @@ html,body{height:100%;overflow:hidden;background:var(--deep);color:var(--ink);
       <div class="tab-pane" id="pane-risk" style="display:none"></div>
     </div>
   </div>
-  <button id="dash-reopen" onclick="toggleDashboard()">☰ 仪表盘</button>
+  <button id="dash-reopen" onclick="toggleDashboard()">☰ 返回仪表盘</button>
 
   <!-- ====== LAYER FAN (on map) ====== -->
   <button id="layers-fab" onclick="toggleLayerFan()"><span class="fico">▦</span>图层</button>
@@ -810,7 +811,7 @@ function renderWhy(){
     <div class="sub">ATTRIBUTION · 归因图谱</div>
     <h2>为什么是这个夏天？</h2>
     <div class="lead">2026年夏：副高异常偏强偏西、西南季风偏活跃、西北太平洋海温偏高——多种环流配置罕见叠加，而全球变暖抬高了高温与极端暴雨的概率基线。地图上每个圆点按<b style="color:#34c759">气候归因证据强度</b>着色，点击下方条目查看每个事件的归因说明。</div>
-    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>归因要靠物证支撑——到「图层」页打开<b>海温 SST</b>（台风能量来源）与<b>陆地温度</b>（热穹顶证据），把时间轴拖到事件日期亲眼对照。<span class="xlink" onclick="toggleLayerFan(true)">打开图层 →</span></span></div></div>
+    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>归因要靠物证支撑——到「图层」页打开<b>海温 SST</b>（台风能量来源）与<b>陆地温度</b>（热穹顶证据），把时间轴拖到事件日期亲眼对照。</span></div></div>
     <div class="legend">
       <div class="li"><span class="dot" style="background:#34c759"></span><span>强证据 — 归因研究证实：变暖显著推高该类事件发生概率</span></div>
       <div class="li"><span class="dot" style="background:#ffb020"></span><span>中等证据 — 天气尺度直接原因清楚，气候变暖的贡献量级不确定</span></div>
@@ -851,7 +852,7 @@ function renderRisk(){
       <div class="li"><span class="dot" style="background:rgba(122,149,181,.5)"></span><span>&lt; 5 亿 / 官方未公布</span></div>
     </div>
     <div class="insight"><b>放大器 ① 灾害链：</b>损失不是单点事故——台风→残涡滞留→破纪录暴雨→水库溃坝→流域洪水，每一环都放大上一环。仅前三大事件就占总损失 ${Math.round(top3/total*100)}%。</div>
-    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>「图层」页的<b>真彩色云图</b>可回看灾害当天真实云系（如 7·1 美莎克残涡、7·11 巴威登陆日），<b>强降雨</b>层看实时雨强——云图即灾害链第一环的物证。<span class="xlink" onclick="toggleLayerFan(true)">打开图层 →</span></span></div></div>
+    <div class="flow"><div class="fs"><span class="n">证据联动</span><span>「图层」页的<b>真彩色云图</b>可回看灾害当天真实云系（如 7·1 美莎克残涡、7·11 巴威登陆日），<b>强降雨</b>层看实时雨强——云图即灾害链第一环的物证。</span></div></div>
     <div class="insight"><b>放大器 ② 承灾体暴露：</b>水库大坝、口岸城镇、农业与人口大省恰好压在极端降雨带上——六蓝水库溃坝、吉隆口岸被冲毁，都是"极端天气 × 脆弱设施"的复合结果，天气只是扳机。</div>
     <div class="insight"><b>放大器 ③ 夜间突发：</b>遂川泥石流凌晨4时、鄂东强对流夜间爆发——预警窗口被压缩到小时级甚至分钟级，伤亡因此集中在最脆弱的时段。</div>
     <div class="grp" style="margin-top:14px"><span class="dot" style="background:#ff3b30"></span>按损失排序 · ${withLoss.length} 个有统计的事件</div>
